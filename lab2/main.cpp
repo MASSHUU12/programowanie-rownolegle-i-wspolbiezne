@@ -3,7 +3,7 @@
 #include <random>
 #include <thread>
 
-const int N = 1024;
+const int N = 2048;
 const int THREADS_MAX = 16;
 
 double a[N][N], b[N][N], c[N][N], bt[N][N];

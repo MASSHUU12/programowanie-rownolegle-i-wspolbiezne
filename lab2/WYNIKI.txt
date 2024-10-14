@@ -1,19 +1,19 @@
-Rozmiar macierzy: 1024
-Czas mnozenia sekwencyjnego: 1675ms
-Czas transponowania macierzy B: 4ms
-Czas mnozenia sekwencyjnego z transponowaniem macierzy B: 1651ms
+Rozmiar macierzy: 2048
+Czas mnozenia sekwencyjnego: 32213ms
+Czas transponowania macierzy B: 54ms
+Czas mnozenia sekwencyjnego z transponowaniem macierzy B: 13701ms
 Licza watkow: 1
-Czas mnozenia rownoleglego: 1736ms
-Czas mnozenia rownoleglego z transponowana macierzy B: 1652ms
+Czas mnozenia rownoleglego: 32154ms
+Czas mnozenia rownoleglego z transponowana macierzy B: 13647ms
 Licza watkow: 2
-Czas mnozenia rownoleglego: 951ms
-Czas mnozenia rownoleglego z transponowana macierzy B: 829ms
+Czas mnozenia rownoleglego: 16144ms
+Czas mnozenia rownoleglego z transponowana macierzy B: 6913ms
 Licza watkow: 4
-Czas mnozenia rownoleglego: 558ms
-Czas mnozenia rownoleglego z transponowana macierzy B: 421ms
+Czas mnozenia rownoleglego: 8131ms
+Czas mnozenia rownoleglego z transponowana macierzy B: 3362ms
 Licza watkow: 8
-Czas mnozenia rownoleglego: 523ms
-Czas mnozenia rownoleglego z transponowana macierzy B: 217ms
+Czas mnozenia rownoleglego: 6529ms
+Czas mnozenia rownoleglego z transponowana macierzy B: 1816ms
 Licza watkow: 16
-Czas mnozenia rownoleglego: 575ms
-Czas mnozenia rownoleglego z transponowana macierzy B: 218ms
+Czas mnozenia rownoleglego: 6839ms
+Czas mnozenia rownoleglego z transponowana macierzy B: 1799ms

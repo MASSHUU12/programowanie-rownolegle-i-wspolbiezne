@@ -1,8 +1,8 @@
 # Programowanie Równoległe i Współbieżne
 
-## Lab 1
+> g++ requires 'gcc-c++' package on Fedora.
 
-> On Fedora requires 'gcc-c++' package.
+## Lab 1
 
 ```sh
 g++ -std=c++11 -pthread ./lab1/main.cpp
@@ -17,11 +17,15 @@ g++ -std=c++11 -pthread ./lab1/main.cpp
 
 ## Lab 2
 
+```sh
+g++ -O3 -std=c++11 -pthread ./lab2/main.cpp
+```
+
 ### References
 
+- https://mpalkowski.zut.edu.pl/lab1_odm.pdf
 - https://solarianprogrammer.com/2011/12/16/cpp-11-thread-tutorial/
 - https://en.cppreference.com/w/cpp/chrono
 - https://www.techiedelight.com/dynamic-memory-allocation-in-c-for-2d-3d-array/
 - https://www.geeksforgeeks.org/2d-vector-in-cpp-with-user-defined-size/
 - https://thispointer.com/c-11-multithreading-part-1-three-different-ways-to-create-threads/
-

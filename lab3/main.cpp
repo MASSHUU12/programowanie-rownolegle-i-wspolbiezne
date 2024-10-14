@@ -1,90 +1,91 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <thread>
 
-int main() {
-  // Screen coordinate
-  int iX, iY;
-  const int iXmax = 800;
-  const int iYmax = 800;
+// Screen coordinate
+const int IX_MAX = 800;
+const int IY_MAX = 800;
 
-  // World coordinate = parameter plane
-  double Cx, Cy;
-  constexpr double CxMin = -2.5;
-  constexpr double CxMax = 1.5;
-  constexpr double CyMin = -2.0;
-  constexpr double CyMax = 2.0;
+// World coordinate = parameter plane
+constexpr double CX_MIN = -2.5;
+constexpr double CX_MAX = 1.5;
+constexpr double CY_MIN = -2.0;
+constexpr double CY_MAX = 2.0;
 
-  constexpr double PixelWidth = (CxMax - CxMin) / iXmax;
-  constexpr double PixelHeight = (CyMax - CyMin) / iYmax;
+constexpr double PIXEL_WIDTH = (CX_MAX - CX_MIN) / IX_MAX;
+constexpr double PIXEL_HEIGHT = (CY_MAX - CY_MIN) / IY_MAX;
 
-  // Color component (R or G or B) is coded from 0 to 255
-  // It is 24 bit color RGB file
-  const int MaxColorComponentValue = 255;
+// Color component (R or G or B) is coded from 0 to 255
+// It is 24 bit color RGB file
+const int MAX_COLOR_COMPONENT_VALUE = 255;
 
-  const std::string filename = "new1.ppm";
-  const std::string comment = "# ";
+const std::string FILENAME = "new1.ppm";
+const std::string COMMENT = "# ";
 
-  // Z = Zx + Zy * i ; Z0 = 0
-  double Zx, Zy;
-  double Zx2, Zy2;
+// Iteration and bail-out value
+const int ITERATION_MAX = 200;
+constexpr double ESCAPE_RADIUS = 2;
+constexpr double ER2 = ESCAPE_RADIUS * ESCAPE_RADIUS;
 
-  // Iteration and bail-out value
-  int Iteration;
-  const int IterationMax = 200;
-  constexpr double EscapeRadius = 2;
-  constexpr double ER2 = EscapeRadius * EscapeRadius;
+unsigned char *IMAGE_DATA = new unsigned char[IX_MAX * IY_MAX * 3];
 
-  // Create new file and open it in binary mode
-  std::ofstream fp(filename, std::ios::binary);
+constexpr int NUM_THREADS = 4;
+constexpr int CHUNK_SIZE = IY_MAX / NUM_THREADS;
+std::thread threads[NUM_THREADS];
 
-  // Write ASCII header to the file
-  fp << "P6\n " << comment << "\n " << iXmax << "\n " << iYmax << "\n "
-     << MaxColorComponentValue << '\n';
+void computeMandelbrot(int start, int end) {
+  for (int iY = start; iY < end; iY++) {
+    for (int iX = 0; iX < IX_MAX; iX++) {
+      double Cx = CX_MIN + iX * PIXEL_WIDTH;
+      double Cy = CY_MIN + iY * PIXEL_HEIGHT;
 
-  unsigned char imageData[iXmax * iYmax * 3];
+      double Zx = 0.0;
+      double Zy = 0.0;
+      double Zx2 = Zx * Zx;
+      double Zy2 = Zy * Zy;
 
-  // Compute and write image data bytes to the file
-  int imageDataIndex = 0;
-  for (iY = 0; iY < iYmax; iY++) {
-    Cy = CyMin + iY * PixelHeight;
-    if (std::fabs(Cy) < PixelHeight / 2)
-      Cy = 0.0; // Main antenna
-
-    for (iX = 0; iX < iXmax; iX++) {
-      Cx = CxMin + iX * PixelWidth;
-
-      // Initial value of orbit = critical point Z= 0
-      Zx = 0.0;
-      Zy = 0.0;
-      Zx2 = Zx * Zx;
-      Zy2 = Zy * Zy;
-
-      // Iterate until bail-out value or max iterations
-      for (Iteration = 0; Iteration < IterationMax && ((Zx2 + Zy2) < ER2);
-           Iteration++) {
+      int Iteration = 0;
+      while (Iteration < ITERATION_MAX &&
+             (Zx2 + Zy2) < ER2) {
         Zy = 2 * Zx * Zy + Cy;
         Zx = Zx2 - Zy2 + Cx;
         Zx2 = Zx * Zx;
         Zy2 = Zy * Zy;
-      };
+        Iteration++;
+      }
 
-      // Compute pixel color (24 bit = 3 bytes)
-      if (Iteration == IterationMax) {
-        // Interior of Mandelbrot set = black
-        imageData[imageDataIndex++] = 0;
-        imageData[imageDataIndex++] = 0;
-        imageData[imageDataIndex++] = 0;
+      if (Iteration == ITERATION_MAX) {
+        IMAGE_DATA[iY * IX_MAX * 3 + iX * 3] = 0;
+        IMAGE_DATA[iY * IX_MAX * 3 + iX * 3 + 1] = 0;
+        IMAGE_DATA[iY * IX_MAX * 3 + iX * 3 + 2] = 0;
       } else {
-        // Exterior of Mandelbrot set = white
-        imageData[imageDataIndex++] = 255; // Red
-        imageData[imageDataIndex++] = 255; // Green
-        imageData[imageDataIndex++] = 255; // Blue
-      };
+        IMAGE_DATA[iY * IX_MAX * 3 + iX * 3] = 255;
+        IMAGE_DATA[iY * IX_MAX * 3 + iX * 3 + 1] = 255;
+        IMAGE_DATA[iY * IX_MAX * 3 + iX * 3 + 2] = 255;
+      }
     }
   }
+}
 
-  fp.write((char *)imageData, iXmax * iYmax * 3);
+int main() {
+  for (int i = 0; i < NUM_THREADS; i++) {
+    int start = i * CHUNK_SIZE;
+    int end = (i == NUM_THREADS - 1) ? IY_MAX : (i + 1) * CHUNK_SIZE;
+    threads[i] = std::thread(computeMandelbrot, start, end);
+  }
+
+  for (int i = 0; i < NUM_THREADS; i++) {
+    threads[i].join();
+  }
+
+  std::ofstream fp("mandelbrot.ppm", std::ios::binary);
+  fp << "P6\n " << COMMENT << "\n " << IX_MAX << "\n " << IY_MAX << "\n "
+     << MAX_COLOR_COMPONENT_VALUE << '\n';
+  fp.write((char *)IMAGE_DATA, IX_MAX * IY_MAX * 3);
   fp.close();
+
+  delete[] IMAGE_DATA;
+
   return 0;
 }

@@ -25,8 +25,6 @@ int main() {
   const std::string filename = "new1.ppm";
   const std::string comment = "# ";
 
-  static unsigned char color[3];
-
   // Z = Zx + Zy * i ; Z0 = 0
   double Zx, Zy;
   double Zx2, Zy2;
@@ -41,13 +39,13 @@ int main() {
   std::ofstream fp(filename, std::ios::binary);
 
   // Write ASCII header to the file
-  fp << "P6\n "
-     << comment << "\n "
-     << iXmax << "\n "
-     << iYmax << "\n "
+  fp << "P6\n " << comment << "\n " << iXmax << "\n " << iYmax << "\n "
      << MaxColorComponentValue << '\n';
 
+  unsigned char imageData[iXmax * iYmax * 3];
+
   // Compute and write image data bytes to the file
+  int imageDataIndex = 0;
   for (iY = 0; iY < iYmax; iY++) {
     Cy = CyMin + iY * PixelHeight;
     if (std::fabs(Cy) < PixelHeight / 2)
@@ -74,19 +72,19 @@ int main() {
       // Compute pixel color (24 bit = 3 bytes)
       if (Iteration == IterationMax) {
         // Interior of Mandelbrot set = black
-        color[0] = 0;
-        color[1] = 0;
-        color[2] = 0;
+        imageData[imageDataIndex++] = 0;
+        imageData[imageDataIndex++] = 0;
+        imageData[imageDataIndex++] = 0;
       } else {
         // Exterior of Mandelbrot set = white
-        color[0] = 255; // Red
-        color[1] = 255; // Green
-        color[2] = 255; // Blue
+        imageData[imageDataIndex++] = 255; // Red
+        imageData[imageDataIndex++] = 255; // Green
+        imageData[imageDataIndex++] = 255; // Blue
       };
-
-      fp.write((char *)color, 3);
     }
   }
+
+  fp.write((char *)imageData, iXmax * iYmax * 3);
   fp.close();
   return 0;
 }

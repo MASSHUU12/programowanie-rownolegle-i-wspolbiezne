@@ -18,7 +18,7 @@ g++ -std=c++11 -pthread ./lab1/main.cpp
 ## Lab 2
 
 ```sh
-g++ -O3 -std=c++11 -pthread ./lab2/main.cpp
+./build.sh && ./run.sh
 ```
 
 ### References
@@ -33,7 +33,7 @@ g++ -O3 -std=c++11 -pthread ./lab2/main.cpp
 ## Lab 3
 
 ```sh
-g++ -O3 -std=c++11 -pthread ./lab3/main.cpp
+./build.sh && ./run.sh
 ```
 
 ### References

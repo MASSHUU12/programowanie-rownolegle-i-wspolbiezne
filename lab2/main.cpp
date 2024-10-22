@@ -3,15 +3,15 @@
 #include <random>
 #include <thread>
 
-const int N = 2048;
-const int THREADS_MAX = 16;
+int cpus{};
+int matrix_size{};
 
-double a[N][N], b[N][N], c[N][N], bt[N][N];
+double **a, **b, **c, **bt;
 
 void multiply_sequential() {
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < N; ++j) {
-      for (int k = 0; k < N; ++k) {
+  for (int i = 0; i < matrix_size; ++i) {
+    for (int j = 0; j < matrix_size; ++j) {
+      for (int k = 0; k < matrix_size; ++k) {
         c[i][j] += a[i][k] * b[k][j];
       }
     }
@@ -20,8 +20,8 @@ void multiply_sequential() {
 
 void multiply_parallel(int start, int end) {
   for (int i = start; i < end; ++i) {
-    for (int j = 0; j < N; ++j) {
-      for (int k = 0; k < N; ++k) {
+    for (int j = 0; j < matrix_size; ++j) {
+      for (int k = 0; k < matrix_size; ++k) {
         c[i][j] += a[i][k] * b[k][j];
       }
     }
@@ -29,17 +29,17 @@ void multiply_parallel(int start, int end) {
 }
 
 void transpose_b() {
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < N; ++j) {
+  for (int i = 0; i < matrix_size; ++i) {
+    for (int j = 0; j < matrix_size; ++j) {
       bt[i][j] = b[j][i];
     }
   }
 }
 
 void multiply_sequential_transposed() {
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < N; ++j) {
-      for (int k = 0; k < N; ++k) {
+  for (int i = 0; i < matrix_size; ++i) {
+    for (int j = 0; j < matrix_size; ++j) {
+      for (int k = 0; k < matrix_size; ++k) {
         c[i][j] += a[i][k] * bt[j][k];
       }
     }
@@ -48,65 +48,78 @@ void multiply_sequential_transposed() {
 
 void multiply_parallel_transposed(int start, int end) {
   for (int i = start; i < end; ++i) {
-    for (int j = 0; j < N; ++j) {
-      for (int k = 0; k < N; ++k) {
+    for (int j = 0; j < matrix_size; ++j) {
+      for (int k = 0; k < matrix_size; ++k) {
         c[i][j] += a[i][k] * bt[j][k];
       }
     }
   }
 }
 
-void measure_time_parallel(int thread_num) {
-  // Mnozenie macierzy rownolegle
-  std::thread threads[thread_num];
-  auto start = std::chrono::high_resolution_clock::now();
-  for (int i = 0; i < thread_num; ++i) {
-    int startRow = i * N / thread_num;
-    int endRow = (i + 1) * N / thread_num;
-    threads[i] = std::thread(multiply_parallel, startRow, endRow);
+void measure_time_parallel(int transpose) {
+  std::thread threads[cpus];
+  if (transpose == 0) {
+    // Parallel multiplication time
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < cpus; ++i) {
+      int startRow = i * matrix_size / cpus;
+      int endRow = (i + 1) * matrix_size / cpus;
+      threads[i] = std::thread(multiply_parallel, startRow, endRow);
+    }
+
+    for (int i = 0; i < cpus; ++i) {
+      threads[i].join();
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+            .count();
+
+    std::cout << "Parallel multiplication time: " << time << "ms\n";
+    return;
   }
 
-  for (int i = 0; i < thread_num; ++i) {
+  // Parallel multiplication time with transposed matrix B
+  for (int i = 0; i < matrix_size; ++i) {
+    for (int j = 0; j < matrix_size; ++j) {
+      c[i][j] = 0.f;
+    }
+  }
+  auto start = std::chrono::high_resolution_clock::now();
+  for (int i = 0; i < cpus; ++i) {
+    int startRow = i * matrix_size / cpus;
+    int endRow = (i + 1) * matrix_size / cpus;
+    threads[i] = std::thread(multiply_parallel_transposed, startRow, endRow);
+  }
+
+  for (int i = 0; i < cpus; ++i) {
     threads[i].join();
   }
   auto end = std::chrono::high_resolution_clock::now();
   auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
                   .count();
 
-  std::cout << "Czas mnozenia rownoleglego: " << time << "ms\n";
-
-  // Mnozenie macierzy rownolegle z transponowana macierza B
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < N; ++j) {
-      c[i][j] = 0.f;
-    }
-  }
-  start = std::chrono::high_resolution_clock::now();
-  for (int i = 0; i < thread_num; ++i) {
-    int startRow = i * N / thread_num;
-    int endRow = (i + 1) * N / thread_num;
-    threads[i] = std::thread(multiply_parallel_transposed, startRow, endRow);
-  }
-
-  for (int i = 0; i < thread_num; ++i) {
-    threads[i].join();
-  }
-  end = std::chrono::high_resolution_clock::now();
-  time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-             .count();
-
-  std::cout << "Czas mnozenia rownoleglego z transponowana macierzy B: " << time
+  std::cout << "Parallel multiplication time with transposed matrix B: " << time
             << "ms\n";
 }
 
 void initialize_matrix() {
-  // Inicjalizacja macierzy
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_real_distribution<double> dis(0.f, 1.f);
 
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < N; ++j) {
+  a = new double*[matrix_size];
+  b = new double*[matrix_size];
+  c = new double*[matrix_size];
+  bt = new double*[matrix_size];
+
+  for (int i = 0; i < matrix_size; ++i) {
+    a[i] = new double[matrix_size];
+    b[i] = new double[matrix_size];
+    c[i] = new double[matrix_size];
+    bt[i] = new double[matrix_size];
+
+    for (int j = 0; j < matrix_size; ++j) {
       a[i][j] = dis(gen);
       b[i][j] = dis(gen);
       c[i][j] = 0.f;
@@ -114,48 +127,98 @@ void initialize_matrix() {
   }
 }
 
-int main() {
+void deallocate_matrix() {
+  for (int i = 0; i < matrix_size; ++i) {
+    delete[] a[i];
+    delete[] b[i];
+    delete[] c[i];
+    delete[] bt[i];
+  }
+
+  delete[] a;
+  delete[] b;
+  delete[] c;
+  delete[] bt;
+}
+
+int convert_string_to_int(const std::string &str) {
+  try {
+    return std::stoi(str);
+  } catch (const std::invalid_argument &ex) {
+    std::cerr << "Invalid number: " << str << '\n';
+    exit(1);
+  } catch (const std::out_of_range &ex) {
+    std::cerr << "Number out of range: " << str << '\n';
+    exit(1);
+  }
+}
+
+int main(int argc, char **argv) {
+  if (argc < 3) {
+    std::cerr << "Usage: <cpus> <size> <transpose>\n";
+    return 1;
+  }
+
+  cpus = convert_string_to_int(argv[1]);
+  matrix_size = convert_string_to_int(argv[2]);
+
+  if (cpus < 1 || matrix_size < 1) {
+    std::cerr << "ERR: Number of CPUs/matrix size less than 1.\n";
+    return 1;
+  }
+
+  int transpose = convert_string_to_int(argv[3]);
+  if (transpose != 0 && transpose != 1) {
+    std::cerr << "ERR: Expected value to be 0 or 1.\n";
+    return 1;
+  }
+
   initialize_matrix();
 
-  std::cout << "Rozmiar macierzy: " << N << '\n';
+  if (cpus == 1) {
+    if (transpose == 0) {
+      // Time of sequential multiplication
+      auto start = std::chrono::high_resolution_clock::now();
+      multiply_sequential();
+      auto end = std::chrono::high_resolution_clock::now();
+      auto time =
+          std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+              .count();
 
-  // Mnozenie macierzy sekwencyjnie
-  auto start = std::chrono::high_resolution_clock::now();
-  multiply_sequential();
-  auto end = std::chrono::high_resolution_clock::now();
-  auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-                  .count();
+      std::cout << "Time of sequential multiplication: " << time << "ms\n";
+    } else {
+      // B matrix transpose time
+      auto start = std::chrono::high_resolution_clock::now();
+      transpose_b();
+      auto end = std::chrono::high_resolution_clock::now();
+      auto time =
+          std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+              .count();
 
-  std::cout << "Czas mnozenia sekwencyjnego: " << time << "ms\n";
+      std::cout << "B matrix transpose time: " << time << "ms\n";
 
-  // Transponowanie macierzy
-  start = std::chrono::high_resolution_clock::now();
-  transpose_b();
-  end = std::chrono::high_resolution_clock::now();
-  time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-             .count();
+      // Sequential multiplication time with matrix transpose B
+      for (int i = 0; i < matrix_size; ++i) {
+        for (int j = 0; j < matrix_size; ++j) {
+          c[i][j] = 0.f;
+        }
+      }
+      start = std::chrono::high_resolution_clock::now();
+      multiply_sequential_transposed();
+      end = std::chrono::high_resolution_clock::now();
+      time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+                 .count();
 
-  std::cout << "Czas transponowania macierzy B: " << time << "ms\n";
-
-  // Mnozenie macierzy sekwencyjnie z transponowaniem macierzy B
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < N; ++j) {
-      c[i][j] = 0.f;
+      std::cout << "Sequential multiplication time with matrix transpose B: "
+                << time << "ms\n";
     }
-  }
-  start = std::chrono::high_resolution_clock::now();
-  multiply_sequential_transposed();
-  end = std::chrono::high_resolution_clock::now();
-  time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-             .count();
 
-  std::cout << "Czas mnozenia sekwencyjnego z transponowaniem macierzy B: "
-            << time << "ms\n";
-
-  for (int i = 1; i <= THREADS_MAX; i *= 2) {
-    std::cout << "Licza watkow: " << i << '\n';
-    measure_time_parallel(i);
+    deallocate_matrix();
+    return 0;
   }
 
+  measure_time_parallel(transpose);
+
+  deallocate_matrix();
   return 0;
 }

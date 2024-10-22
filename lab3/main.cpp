@@ -4,30 +4,28 @@
 #include <iostream>
 #include <thread>
 
-// Screen coordinate
-int ix_max{};
-int iy_max{};
+int ix_max{}, iy_max{};
+double pixel_width{}, pixel_height{};
 
-// World coordinate = parameter plane
-constexpr double CX_MIN = -2.5;
-constexpr double CX_MAX = 1.5;
-constexpr double CY_MIN = -2.0;
-constexpr double CY_MAX = 2.0;
+const double CX_MIN = -2.5;
+const double CX_MAX = 1.5;
+const double CY_MIN = -2.0;
+const double CY_MAX = 2.0;
 
-double pixel_width{};
-double pixel_height{};
-
-const std::string FILENAME = "new1.ppm";
-
-// Iteration and bail-out value
 const int ITERATION_MAX = 200;
 constexpr double ESCAPE_RADIUS = 2;
 constexpr double ER2 = ESCAPE_RADIUS * ESCAPE_RADIUS;
 
+constexpr int COLOR_BASE = 50;
+constexpr int COLOR_R = COLOR_BASE;
+constexpr int COLOR_G = COLOR_BASE * 2;
+constexpr int COLOR_B = COLOR_BASE * 3;
+
+const std::string FILENAME = "new1.ppm";
+
 unsigned char *image_data;
 
-int cpus{};
-int chunk_size{};
+int cpus{}, chunk_size{};
 
 void computeMandelbrot(int thread_num, int start, int end) {
   for (int iY = start; iY < end; iY++) {
@@ -35,23 +33,19 @@ void computeMandelbrot(int thread_num, int start, int end) {
       double Cx = CX_MIN + iX * pixel_width;
       double Cy = CY_MIN + iY * pixel_height;
 
-      double Zx = 0.0;
-      double Zy = 0.0;
-      double Zx2 = Zx * Zx;
-      double Zy2 = Zy * Zy;
+      double Zx = 0.0, Zy = 0.0, Zx2 = Zx * Zx, Zy2 = Zy * Zy;
 
-      int Iteration = 0;
-      while (Iteration < ITERATION_MAX && (Zx2 + Zy2) < ER2) {
+      int i = 0;
+      while (i < ITERATION_MAX && (Zx2 + Zy2) < ER2) {
         Zy = 2 * Zx * Zy + Cy;
         Zx = Zx2 - Zy2 + Cx;
         Zx2 = Zx * Zx;
         Zy2 = Zy * Zy;
-        Iteration++;
+        i++;
       }
 
-      int iX3 = iX * 3;
-      int common = iY * ix_max * 3 + iX3;
-      if (Iteration == ITERATION_MAX) {
+      int common = iY * ix_max * 3 + iX * 3;
+      if (i == ITERATION_MAX) {
         image_data[common] = 0;
         image_data[common + 1] = 0;
         image_data[common + 2] = 0;
@@ -59,14 +53,9 @@ void computeMandelbrot(int thread_num, int start, int end) {
         // Prevent black color in the first thread
         int base = thread_num + 1;
 
-        // Fancy colors
-        int r = (base * 50) % 256;
-        int g = (base * 100) % 256;
-        int b = (base * 150) % 256;
-
-        image_data[common] = r;
-        image_data[common + 1] = g;
-        image_data[common + 2] = b;
+        image_data[common + 0] = (base * COLOR_R) % 256;
+        image_data[common + 1] = (base * COLOR_G) % 256;
+        image_data[common + 2] = (base * COLOR_B) % 256;
       }
     }
   }
@@ -128,11 +117,8 @@ int main(int argc, char **argv) {
               << ")\n";
 
     generate_image();
-  } catch (const std::invalid_argument &e) {
-    std::cerr << "ERR: Invalid argument.\n";
-    return 1;
-  } catch (const std::out_of_range &e) {
-    std::cerr << "ERR: Out of range.\n";
+  } catch (const std::exception &e) {
+    std::cerr << "ERR: " << e.what() << '\n';
     return 1;
   }
 

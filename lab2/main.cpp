@@ -1,6 +1,5 @@
 #include <chrono>
 #include <iostream>
-#include <random>
 #include <thread>
 
 int cpus{};
@@ -8,17 +7,7 @@ int matrix_size{};
 
 double **a, **b, **c, **bt;
 
-void multiply_sequential() {
-  for (int i = 0; i < matrix_size; ++i) {
-    for (int j = 0; j < matrix_size; ++j) {
-      for (int k = 0; k < matrix_size; ++k) {
-        c[i][j] += a[i][k] * b[k][j];
-      }
-    }
-  }
-}
-
-void multiply_parallel(int start, int end) {
+void multiply(int start, int end) {
   for (int i = start; i < end; ++i) {
     for (int j = 0; j < matrix_size; ++j) {
       for (int k = 0; k < matrix_size; ++k) {
@@ -36,17 +25,7 @@ void transpose_b() {
   }
 }
 
-void multiply_sequential_transposed() {
-  for (int i = 0; i < matrix_size; ++i) {
-    for (int j = 0; j < matrix_size; ++j) {
-      for (int k = 0; k < matrix_size; ++k) {
-        c[i][j] += a[i][k] * bt[j][k];
-      }
-    }
-  }
-}
-
-void multiply_parallel_transposed(int start, int end) {
+void multiply_transposed(int start, int end) {
   for (int i = start; i < end; ++i) {
     for (int j = 0; j < matrix_size; ++j) {
       for (int k = 0; k < matrix_size; ++k) {
@@ -56,15 +35,24 @@ void multiply_parallel_transposed(int start, int end) {
   }
 }
 
+void measure_time_transpose() {
+  auto start = std::chrono::high_resolution_clock::now();
+  transpose_b();
+  auto end = std::chrono::high_resolution_clock::now();
+  auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+                  .count();
+
+  std::cout << "B matrix transpose time: " << time << "ms\n";
+}
+
 void measure_time_parallel(int transpose) {
   std::thread threads[cpus];
   if (transpose == 0) {
-    // Parallel multiplication time
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < cpus; ++i) {
       int startRow = i * matrix_size / cpus;
       int endRow = (i + 1) * matrix_size / cpus;
-      threads[i] = std::thread(multiply_parallel, startRow, endRow);
+      threads[i] = std::thread(multiply, startRow, endRow);
     }
 
     for (int i = 0; i < cpus; ++i) {
@@ -79,17 +67,13 @@ void measure_time_parallel(int transpose) {
     return;
   }
 
-  // Parallel multiplication time with transposed matrix B
-  for (int i = 0; i < matrix_size; ++i) {
-    for (int j = 0; j < matrix_size; ++j) {
-      c[i][j] = 0.f;
-    }
-  }
+  measure_time_transpose();
+
   auto start = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < cpus; ++i) {
     int startRow = i * matrix_size / cpus;
     int endRow = (i + 1) * matrix_size / cpus;
-    threads[i] = std::thread(multiply_parallel_transposed, startRow, endRow);
+    threads[i] = std::thread(multiply_transposed, startRow, endRow);
   }
 
   for (int i = 0; i < cpus; ++i) {
@@ -103,15 +87,36 @@ void measure_time_parallel(int transpose) {
             << "ms\n";
 }
 
-void initialize_matrix() {
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_real_distribution<double> dis(0.f, 1.f);
+void measure_time_sequential(int transpose) {
+  if (transpose == 0) {
+    auto start = std::chrono::high_resolution_clock::now();
+    multiply(0, matrix_size);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+            .count();
 
-  a = new double*[matrix_size];
-  b = new double*[matrix_size];
-  c = new double*[matrix_size];
-  bt = new double*[matrix_size];
+    std::cout << "Time of sequential multiplication: " << time << "ms\n";
+    return;
+  }
+
+  measure_time_transpose();
+
+  auto start = std::chrono::high_resolution_clock::now();
+  multiply_transposed(0, matrix_size);
+  auto end = std::chrono::high_resolution_clock::now();
+  auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+                  .count();
+
+  std::cout << "Sequential multiplication time with transposed matrix B: "
+            << time << "ms\n";
+}
+
+void initialize_matrix() {
+  a = new double *[matrix_size];
+  b = new double *[matrix_size];
+  c = new double *[matrix_size];
+  bt = new double *[matrix_size];
 
   for (int i = 0; i < matrix_size; ++i) {
     a[i] = new double[matrix_size];
@@ -120,9 +125,10 @@ void initialize_matrix() {
     bt[i] = new double[matrix_size];
 
     for (int j = 0; j < matrix_size; ++j) {
-      a[i][j] = dis(gen);
-      b[i][j] = dis(gen);
+      a[i][j] = 1;
+      b[i][j] = 1;
       c[i][j] = 0.f;
+      bt[i][j] = 0.f;
     }
   }
 }
@@ -141,83 +147,41 @@ void deallocate_matrix() {
   delete[] bt;
 }
 
-int convert_string_to_int(const std::string &str) {
-  try {
-    return std::stoi(str);
-  } catch (const std::invalid_argument &ex) {
-    std::cerr << "Invalid number: " << str << '\n';
-    exit(1);
-  } catch (const std::out_of_range &ex) {
-    std::cerr << "Number out of range: " << str << '\n';
-    exit(1);
-  }
-}
-
 int main(int argc, char **argv) {
   if (argc < 3) {
     std::cerr << "Usage: <cpus> <size> <transpose>\n";
     return 1;
   }
 
-  cpus = convert_string_to_int(argv[1]);
-  matrix_size = convert_string_to_int(argv[2]);
+  try {
+    cpus = std::stoi(argv[1]);
+    matrix_size = std::stoi(argv[2]);
 
-  if (cpus < 1 || matrix_size < 1) {
-    std::cerr << "ERR: Number of CPUs/matrix size less than 1.\n";
-    return 1;
-  }
-
-  int transpose = convert_string_to_int(argv[3]);
-  if (transpose != 0 && transpose != 1) {
-    std::cerr << "ERR: Expected value to be 0 or 1.\n";
-    return 1;
-  }
-
-  initialize_matrix();
-
-  if (cpus == 1) {
-    if (transpose == 0) {
-      // Time of sequential multiplication
-      auto start = std::chrono::high_resolution_clock::now();
-      multiply_sequential();
-      auto end = std::chrono::high_resolution_clock::now();
-      auto time =
-          std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-              .count();
-
-      std::cout << "Time of sequential multiplication: " << time << "ms\n";
-    } else {
-      // B matrix transpose time
-      auto start = std::chrono::high_resolution_clock::now();
-      transpose_b();
-      auto end = std::chrono::high_resolution_clock::now();
-      auto time =
-          std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-              .count();
-
-      std::cout << "B matrix transpose time: " << time << "ms\n";
-
-      // Sequential multiplication time with matrix transpose B
-      for (int i = 0; i < matrix_size; ++i) {
-        for (int j = 0; j < matrix_size; ++j) {
-          c[i][j] = 0.f;
-        }
-      }
-      start = std::chrono::high_resolution_clock::now();
-      multiply_sequential_transposed();
-      end = std::chrono::high_resolution_clock::now();
-      time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-                 .count();
-
-      std::cout << "Sequential multiplication time with matrix transpose B: "
-                << time << "ms\n";
+    if (cpus < 1 || matrix_size < 1) {
+      std::cerr << "ERR: Number of CPUs/matrix size less than 1.\n";
+      return 1;
     }
 
-    deallocate_matrix();
-    return 0;
-  }
+    int transpose = std::stoi(argv[3]);
+    if (transpose != 0 && transpose != 1) {
+      std::cerr << "ERR: Expected value to be 0 or 1.\n";
+      return 1;
+    }
 
-  measure_time_parallel(transpose);
+    initialize_matrix();
+
+    if (cpus == 1) {
+      measure_time_sequential(transpose);
+    } else {
+      measure_time_parallel(transpose);
+    }
+  } catch (const std::invalid_argument &e) {
+    std::cerr << "ERR: Invalid argument.\n";
+    return 1;
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERR: Out of range.\n";
+    return 1;
+  }
 
   deallocate_matrix();
   return 0;

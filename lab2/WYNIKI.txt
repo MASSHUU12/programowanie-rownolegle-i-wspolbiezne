@@ -1,19 +1,129 @@
-Rozmiar macierzy: 2048
-Czas mnozenia sekwencyjnego: 32213ms
-Czas transponowania macierzy B: 54ms
-Czas mnozenia sekwencyjnego z transponowaniem macierzy B: 13701ms
-Licza watkow: 1
-Czas mnozenia rownoleglego: 32154ms
-Czas mnozenia rownoleglego z transponowana macierzy B: 13647ms
-Licza watkow: 2
-Czas mnozenia rownoleglego: 16144ms
-Czas mnozenia rownoleglego z transponowana macierzy B: 6913ms
-Licza watkow: 4
-Czas mnozenia rownoleglego: 8131ms
-Czas mnozenia rownoleglego z transponowana macierzy B: 3362ms
-Licza watkow: 8
-Czas mnozenia rownoleglego: 6529ms
-Czas mnozenia rownoleglego z transponowana macierzy B: 1816ms
-Licza watkow: 16
-Czas mnozenia rownoleglego: 6839ms
-Czas mnozenia rownoleglego z transponowana macierzy B: 1799ms
+model name	: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+cache size	: 12288 KB
+siblings	: 12
+
+Matrix size: 2048
+
+Number of threads: 1
+Time of sequential multiplication: 87376ms
+B matrix transpose time: 43ms
+Sequential multiplication time with transposed matrix B: 14723ms
+
+Number of threads: 2
+Parallel multiplication time: 43099ms
+B matrix transpose time: 43ms
+Parallel multiplication time with transposed matrix B: 7364ms
+
+Number of threads: 3
+Parallel multiplication time: 29413ms
+B matrix transpose time: 44ms
+Parallel multiplication time with transposed matrix B: 4915ms
+
+Number of threads: 4
+Parallel multiplication time: 22507ms
+B matrix transpose time: 44ms
+Parallel multiplication time with transposed matrix B: 3682ms
+
+Number of threads: 5
+Parallel multiplication time: 17972ms
+B matrix transpose time: 43ms
+Parallel multiplication time with transposed matrix B: 2948ms
+
+Number of threads: 6
+Parallel multiplication time: 15126ms
+B matrix transpose time: 43ms
+Parallel multiplication time with transposed matrix B: 2461ms
+
+Number of threads: 7
+Parallel multiplication time: 17435ms
+B matrix transpose time: 45ms
+Parallel multiplication time with transposed matrix B: 2107ms
+
+Number of threads: 8
+Parallel multiplication time: 15039ms
+B matrix transpose time: 43ms
+Parallel multiplication time with transposed matrix B: 1842ms
+
+Number of threads: 9
+Parallel multiplication time: 14451ms
+B matrix transpose time: 43ms
+Parallel multiplication time with transposed matrix B: 1658ms
+
+Number of threads: 10
+Parallel multiplication time: 13450ms
+B matrix transpose time: 43ms
+Parallel multiplication time with transposed matrix B: 1493ms
+
+Number of threads: 11
+Parallel multiplication time: 12821ms
+B matrix transpose time: 43ms
+Parallel multiplication time with transposed matrix B: 1425ms
+
+Number of threads: 12
+Parallel multiplication time: 12775ms
+B matrix transpose time: 44ms
+Parallel multiplication time with transposed matrix B: 1397ms
+
+================================================================================
+
+Matrix size: 1024
+
+Number of threads: 1
+Time of sequential multiplication: 2014ms
+B matrix transpose time: 2ms
+Sequential multiplication time with transposed matrix B: 1757ms
+
+Number of threads: 2
+Parallel multiplication time: 977ms
+B matrix transpose time: 2ms
+Parallel multiplication time with transposed matrix B: 889ms
+
+Number of threads: 3
+Parallel multiplication time: 642ms
+B matrix transpose time: 2ms
+Parallel multiplication time with transposed matrix B: 595ms
+
+Number of threads: 4
+Parallel multiplication time: 485ms
+B matrix transpose time: 2ms
+Parallel multiplication time with transposed matrix B: 445ms
+
+Number of threads: 5
+Parallel multiplication time: 391ms
+B matrix transpose time: 2ms
+Parallel multiplication time with transposed matrix B: 356ms
+
+Number of threads: 6
+Parallel multiplication time: 329ms
+B matrix transpose time: 2ms
+Parallel multiplication time with transposed matrix B: 294ms
+
+Number of threads: 7
+Parallel multiplication time: 547ms
+B matrix transpose time: 2ms
+Parallel multiplication time with transposed matrix B: 265ms
+
+Number of threads: 8
+Parallel multiplication time: 469ms
+B matrix transpose time: 2ms
+Parallel multiplication time with transposed matrix B: 229ms
+
+Number of threads: 9
+Parallel multiplication time: 465ms
+B matrix transpose time: 2ms
+Parallel multiplication time with transposed matrix B: 200ms
+
+Number of threads: 10
+Parallel multiplication time: 580ms
+B matrix transpose time: 2ms
+Parallel multiplication time with transposed matrix B: 199ms
+
+Number of threads: 11
+Parallel multiplication time: 770ms
+B matrix transpose time: 2ms
+Parallel multiplication time with transposed matrix B: 184ms
+
+Number of threads: 12
+Parallel multiplication time: 1100ms
+B matrix transpose time: 2ms
+Parallel multiplication time with transposed matrix B: 188ms

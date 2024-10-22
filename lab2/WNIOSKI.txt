@@ -1,19 +1,21 @@
 Na podstawie danych z pliku WYNIKI.txt można wyciągnąć następujące wnioski:
 
-- Transponowanie macierzy skraca czas mnożenia sekwencyjnego ponad dwukrotnie, a
-równoległego nawet blisko czterokrotnie, a co najmniej dwukrotnie.
+- Transponowanie macierzy skraca czas mnożenia sekwencyjnego ponad pięciokrotnie,
+a równoległego nawet dziewięciokrotnie, a co najmniej pięciokrotnie.
 
-- Czas mnożenia równoległego (bez transponowania macierzy) zmniejsza się
-wraz ze wzrostem liczby wątków, ale tylko do pewnego punktu.
-Przy 16 wątkach, czas mnożenia zaczyna się zwiększać.
+- Dla małych macierzy czas mnożenia równoległego (bez transponowania macierzy)
+zmniejsza się wraz ze wzrostem liczby wątków, ale tylko do pewnego punktu.
+Przy 7 wątkach, czas mnożenia zaczyna się zwiększać.
+
+- Niezależnie od rozmiaru macierzy i liczby wątków czas mnożenia macierzy z
+transponowaniem zawsze się zmniejsza.
 
 - Użycie 16 wątków powoduje wzrost czasu mnożenia w porównaniu z użyciem 8
 wątków. Sugeruje to, że zadania dla nich mogą być zbyt małe, co powoduje,
 że koszt tworzenia i zarządzania wątkami przewyższa korzyści z równoległego
 przetwarzania.
 
-- Dla 16 wątków transponowanie macierzy nie daje znacząco lepszych wyników
-niż w przypadku 8 wątków.
+- Dla 10^ wątków transponowanie macierzy nie daje znacząco lepszych wyników.
 
 Wyniki sugerują, że optymalna liczba wątków do mnożenia macierzy zależy od
 konkretnego przypadku i może wymagać eksperymentowania, aby znaleźć najlepsze

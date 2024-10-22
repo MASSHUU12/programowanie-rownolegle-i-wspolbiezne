@@ -34,6 +34,7 @@ cat /proc/cpuinfo | grep -E "model name|siblings|cache size" | sort | uniq
 
 echo
 echo "Matrix size: $matrix_size"
+echo
 
 for i in $(seq 1 $iterations); do
   echo "Number of threads: $i"

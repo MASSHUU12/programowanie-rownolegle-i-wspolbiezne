@@ -34,11 +34,12 @@ cat /proc/cpuinfo | grep -E "model name|siblings|cache size" | sort | uniq
 
 echo
 echo "Resolution: $resolution"
+echo
 
 for i in $(seq 1 $iterations); do
   echo "Number of threads: $i"
 
-  $filepath $resolution
+  $filepath $i $resolution
 
   echo
 done

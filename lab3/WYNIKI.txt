@@ -1,0 +1,53 @@
+model name	: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+cache size	: 12288 KB
+siblings	: 12
+
+Resolution: 8192
+
+Number of threads: 1
+Image new1.ppm (8192x8192)
+Time: 7520ms
+
+Number of threads: 2
+Image new1.ppm (8192x8192)
+Time: 3761ms
+
+Number of threads: 3
+Image new1.ppm (8192x8192)
+Time: 6831ms
+
+Number of threads: 4
+Image new1.ppm (8192x8192)
+Time: 3646ms
+
+Number of threads: 5
+Image new1.ppm (8192x8192)
+Time: 4975ms
+
+Number of threads: 6
+Image new1.ppm (8192x8192)
+Time: 3400ms
+
+Number of threads: 7
+Image new1.ppm (8192x8192)
+Time: 3859ms
+
+Number of threads: 8
+Image new1.ppm (8192x8192)
+Time: 2914ms
+
+Number of threads: 9
+Image new1.ppm (8192x8192)
+Time: 3133ms
+
+Number of threads: 10
+Image new1.ppm (8192x8192)
+Time: 2486ms
+
+Number of threads: 11
+Image new1.ppm (8192x8192)
+Time: 2605ms
+
+Number of threads: 12
+Image new1.ppm (8192x8192)
+Time: 2174ms

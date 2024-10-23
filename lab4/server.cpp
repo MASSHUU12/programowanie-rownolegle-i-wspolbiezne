@@ -4,22 +4,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-const int PORT = 8080;
-const int BUFFER_SIZE = 1024;
+#include "common.hpp"
+
 const int BACKLOG = 3;
-
-void handleError(const std::string &message) {
-  std::cerr << "[ERR]" << message << ": " << strerror(errno) << '\n';
-  exit(1);
-}
-
-int createSocket() {
-  int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-  if (server_fd < 0) {
-    handleError("socket failed");
-  }
-  return server_fd;
-}
 
 void setSocketOptions(const int server_fd) {
   int opt = 1;
@@ -48,20 +35,6 @@ int acceptConnection(int server_fd, sockaddr_in &address) {
     handleError("accept failed");
   }
   return new_socket;
-}
-
-void readData(int new_socket, char *buffer) {
-  ssize_t valread = read(new_socket, buffer, BUFFER_SIZE - 1);
-  if (valread < 0) {
-    handleError("read failed");
-  }
-  buffer[valread] = '\0';
-}
-
-void sendData(int new_socket, const std::string &message) {
-  if (send(new_socket, message.c_str(), message.length(), 0) < 0) {
-    handleError("send failed");
-  }
 }
 
 int main(int argc, char const **argv) {

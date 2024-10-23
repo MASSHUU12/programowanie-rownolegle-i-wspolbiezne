@@ -4,21 +4,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-const int PORT = 8080;
-const int BUFFER_SIZE = 1024;
-
-void handleError(const std::string &message) {
-  std::cerr << "[ERR]" << message << ": " << strerror(errno) << '\n';
-  exit(1);
-}
-
-int createSocket() {
-  int client_fd = socket(AF_INET, SOCK_STREAM, 0);
-  if (client_fd < 0) {
-    handleError("Socket creation error");
-  }
-  return client_fd;
-}
+#include "common.hpp"
 
 void setupServerAddress(sockaddr_in &serv_addr) {
   serv_addr.sin_family = AF_INET;
@@ -37,23 +23,6 @@ void connectToServer(const int client_fd, const sockaddr_in &serv_addr) {
   }
 }
 
-void sendMessage(const int client_fd, const std::string message) {
-  int bytesSent = send(client_fd, message.c_str(), message.length(), 0);
-  if (bytesSent < 0) {
-    handleError("Error sending message");
-  }
-  std::cout << "Message sent\n";
-}
-
-void receiveMessage(const int client_fd, char *buffer) {
-  int bytesReceived = read(client_fd, buffer, BUFFER_SIZE - 1);
-  if (bytesReceived < 0) {
-    handleError("Error receiving message");
-  }
-  buffer[bytesReceived] = '\0'; // Add null terminator
-  std::cout << buffer << std::endl;
-}
-
 int main(const int argc, char const **argv) {
   int client_fd = createSocket();
   struct sockaddr_in serv_addr;
@@ -61,10 +30,12 @@ int main(const int argc, char const **argv) {
   connectToServer(client_fd, serv_addr);
 
   const std::string hello = "Hello from client";
-  sendMessage(client_fd, hello);
+  sendData(client_fd, hello);
+  std::cout << "Message sent\n";
 
   char buffer[BUFFER_SIZE] = {0};
-  receiveMessage(client_fd, buffer);
+  readData(client_fd, buffer);
+  std::cout << buffer << '\n';
 
   close(client_fd);
   return 0;

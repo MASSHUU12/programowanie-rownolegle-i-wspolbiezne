@@ -40,3 +40,15 @@ g++ -std=c++11 -pthread ./lab1/main.cpp
 
 - https://mpalkowski.zut.edu.pl/lab2_odm.pdf
 - https://rosettacode.org/wiki/Mandelbrot_set#PPM_non_interactive
+
+## Lab 4
+
+```sh
+./build.sh
+```
+
+### References
+
+- https://mpalkowski.zut.edu.pl/lab3_odm.pdf
+- https://www.geeksforgeeks.org/socket-programming-cc/
+- https://www.tutorialspoint.com/how-to-output-colored-text-to-a-linux-terminal

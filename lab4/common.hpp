@@ -52,7 +52,7 @@ inline void readData(int socket, char *buffer)
     buffer[valread] = '\0'; // Add null terminator
 }
 
-inline void listenForMessages(const int &client_fd)
+inline void listenForMessages(const int &socket)
 {
     char buffer[BUFFER_SIZE] = {0};
     while (true)
@@ -62,7 +62,7 @@ inline void listenForMessages(const int &client_fd)
             cv.wait(lock, []
                     { return dataAvailable.load(); });
             dataAvailable = false;
-            readData(client_fd, buffer);
+            readData(socket, buffer);
         }
         if (std::string(buffer).find_first_not_of('\0') != std::string::npos)
         {
@@ -72,7 +72,7 @@ inline void listenForMessages(const int &client_fd)
     }
 }
 
-inline void sendMessages(const int &client_fd)
+inline void sendMessages(const int &socket)
 {
     std::string message;
     while (true)
@@ -81,7 +81,7 @@ inline void sendMessages(const int &client_fd)
         std::getline(std::cin, message);
         {
             std::lock_guard<std::mutex> lock(mtx);
-            sendData(client_fd, message);
+            sendData(socket, message);
             dataAvailable = true;
             cv.notify_one();
         }

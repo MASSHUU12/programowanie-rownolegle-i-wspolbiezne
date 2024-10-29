@@ -1,13 +1,13 @@
+#include <fstream>
 #include <iostream>
 #include <mutex>
-#include <vector>
-#include <fstream>
-#include <thread>
 #include <random>
+#include <thread>
+#include <vector>
 
 const short WALL = -1;
 const short EMPTY = 0;
-const unsigned int BOARD_LIMIT = 256;
+const unsigned int BOARD_LIMIT = 1024;
 const std::string FILENAME = "maze.ppm";
 
 struct Cell {
@@ -19,16 +19,19 @@ struct Cell {
 };
 
 Cell *board;
+std::mutex children_mtx;
 
 void generate_maze(int x, int y, int tid, std::vector<int> &children) {
   if (x < 0 || x >= BOARD_LIMIT || y < 0 || y >= BOARD_LIMIT) {
     return;
   }
 
+  board[y * BOARD_LIMIT + x].mtx.lock();
   board[y * BOARD_LIMIT + x].value = tid;
   board[y * BOARD_LIMIT + x].color[0] = 255;
   board[y * BOARD_LIMIT + x].color[1] = 0;
   board[y * BOARD_LIMIT + x].color[2] = 0;
+  board[y * BOARD_LIMIT + x].mtx.unlock();
 
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -53,8 +56,11 @@ void generate_maze(int x, int y, int tid, std::vector<int> &children) {
       int nx = x + directions[availableDirections[i]][0];
       int ny = y + directions[availableDirections[i]][1];
 
-      children.push_back(tid + children.size() + 1);
-      std::thread t(generate_maze, nx, ny, tid + children.size() + 1, std::ref(children));
+      int new_tid = tid + children.size() + 1;
+
+      std::lock_guard<std::mutex> lock(children_mtx);
+      children.push_back(new_tid);
+      std::thread t(generate_maze, nx, ny, new_tid, std::ref(children));
       t.detach();
     }
   }
@@ -88,7 +94,11 @@ int main(int argc, char **argv) {
   // 0 1 0 -> 3 1 1
   // 0 0 0    0 4 0
 
-  board = new Cell[BOARD_LIMIT * BOARD_LIMIT];
+  board = new (std::nothrow) Cell[BOARD_LIMIT * BOARD_LIMIT];
+  if (!board) {
+      std::cerr << "Memory allocation failed!" << std::endl;
+      return 1;
+  }
 
   std::vector<int> children;
   generate_maze(BOARD_LIMIT / 2, BOARD_LIMIT / 2, 1, std::ref(children));

@@ -8,7 +8,7 @@
 
 const short WALL = -1;
 const short EMPTY = 0;
-const unsigned int BOARD_LIMIT = 512;
+const u_int BOARD_LIMIT = 512;
 const std::string FILENAME = "maze.ppm";
 
 constexpr u_int COLOR_BASE = 50;
@@ -24,17 +24,17 @@ struct Cell {
   Cell() : mtx(), value(EMPTY), color{0, 0, 0} {}
 };
 
-Cell *board;
+std::vector<Cell> board(BOARD_LIMIT * BOARD_LIMIT);
 std::mutex children_mtx;
 
-void generate_maze(int x, int y, int tid, std::vector<int> &children) {
+void generate_maze(const int x, const int y, const int tid,
+                   std::vector<int> &children) {
   if (x < 0 || x >= BOARD_LIMIT || y < 0 || y >= BOARD_LIMIT) {
     return;
   }
 
   u_int cell_index = y * BOARD_LIMIT + x;
   std::lock_guard<std::mutex> lock(board[cell_index].mtx);
-  // board[cell_index].mtx.lock();
   if (board[cell_index].value == EMPTY) {
     board[cell_index].value = tid;
 
@@ -48,10 +48,10 @@ void generate_maze(int x, int y, int tid, std::vector<int> &children) {
   std::mt19937 gen(rd());
   std::uniform_int_distribution<> dis(0, 3);
 
-  int directions[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-  std::vector<int> availableDirections;
+  short directions[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+  std::vector<short> availableDirections;
 
-  for (int i = 0; i < 4; i++) {
+  for (u_short i = 0; i < 4; i++) {
     int nx = x + directions[i][0];
     int ny = y + directions[i][1];
 
@@ -86,10 +86,14 @@ void generate_maze(int x, int y, int tid, std::vector<int> &children) {
 
 void generate_ppm() {
   std::ofstream fp(FILENAME, std::ios::binary);
+  if (!fp) {
+    std::cerr << "[ERR] Error opening file for writing.\n";
+    return;
+  }
   fp << "P6\n # \n " << BOARD_LIMIT << "\n " << BOARD_LIMIT << "\n 255\n";
   for (int y = 0; y < BOARD_LIMIT; y++) {
     for (int x = 0; x < BOARD_LIMIT; x++) {
-      fp.write((char *)&board[y * BOARD_LIMIT + x].color, 3);
+      fp.write(reinterpret_cast<char *>(&board[y * BOARD_LIMIT + x].color), 3);
     }
   }
   fp.close();
@@ -105,18 +109,9 @@ int main(int argc, char **argv) {
   // 0 1 0 -> 3 1 1
   // 0 0 0    0 4 0
 
-  board = new (std::nothrow) Cell[BOARD_LIMIT * BOARD_LIMIT];
-  if (!board) {
-      std::cerr << "Memory allocation failed!" << std::endl;
-      return 1;
-  }
-
   std::vector<int> children;
   generate_maze(BOARD_LIMIT / 2, BOARD_LIMIT / 2, 1, std::ref(children));
-
   generate_ppm();
-
-  delete[] board;
 
   return 0;
 }

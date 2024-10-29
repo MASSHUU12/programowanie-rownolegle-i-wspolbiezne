@@ -2,20 +2,26 @@
 #include <iostream>
 #include <mutex>
 #include <random>
+#include <sys/types.h>
 #include <thread>
 #include <vector>
 
 const short WALL = -1;
 const short EMPTY = 0;
-const unsigned int BOARD_LIMIT = 1024;
+const unsigned int BOARD_LIMIT = 512;
 const std::string FILENAME = "maze.ppm";
 
-struct Cell {
-  unsigned short value;
-  std::mutex mtx;
-  unsigned char color[3];
+constexpr u_int COLOR_BASE = 50;
+constexpr u_int COLOR_R = COLOR_BASE;
+constexpr u_int COLOR_G = COLOR_BASE * 2;
+constexpr u_int COLOR_B = COLOR_BASE * 3;
 
-  Cell() : mtx(), value(EMPTY), color{255, 0, 0} {}
+struct Cell {
+  u_char value;
+  u_char color[3];
+  std::mutex mtx;
+
+  Cell() : mtx(), value(EMPTY), color{0, 0, 0} {}
 };
 
 Cell *board;
@@ -26,12 +32,17 @@ void generate_maze(int x, int y, int tid, std::vector<int> &children) {
     return;
   }
 
-  board[y * BOARD_LIMIT + x].mtx.lock();
-  board[y * BOARD_LIMIT + x].value = tid;
-  board[y * BOARD_LIMIT + x].color[0] = 255;
-  board[y * BOARD_LIMIT + x].color[1] = 0;
-  board[y * BOARD_LIMIT + x].color[2] = 0;
-  board[y * BOARD_LIMIT + x].mtx.unlock();
+  u_int cell_index = y * BOARD_LIMIT + x;
+  std::lock_guard<std::mutex> lock(board[cell_index].mtx);
+  // board[cell_index].mtx.lock();
+  if (board[cell_index].value == EMPTY) {
+    board[cell_index].value = tid;
+
+    u_short base = tid + 1;
+    board[cell_index].color[0] = (base * COLOR_R) % 256;
+    board[cell_index].color[1] = (base * COLOR_G) % 256;
+    board[cell_index].color[2] = (base * COLOR_B) % 256;
+  }
 
   std::random_device rd;
   std::mt19937 gen(rd());

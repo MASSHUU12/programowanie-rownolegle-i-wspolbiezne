@@ -1,117 +1,96 @@
+#include <algorithm>
+#include <cstdlib>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <mutex>
-#include <random>
-#include <sys/types.h>
 #include <thread>
 #include <vector>
 
-const short WALL = -1;
-const short EMPTY = 0;
-const u_int BOARD_LIMIT = 512;
-const std::string FILENAME = "maze.ppm";
+const int WIDTH = 64;
+const int HEIGHT = 64;
 
-constexpr u_int COLOR_BASE = 50;
-constexpr u_int COLOR_R = COLOR_BASE;
-constexpr u_int COLOR_G = COLOR_BASE * 2;
-constexpr u_int COLOR_B = COLOR_BASE * 3;
+std::vector<std::vector<int>> maze(HEIGHT, std::vector<int>(WIDTH, 0));
+std::mutex maze_mutex;
+int thread_count = 1;
 
-struct Cell {
-  u_char value;
-  u_char color[3];
-  std::mutex mtx;
-
-  Cell() : mtx(), value(EMPTY), color{0, 0, 0} {}
+struct Position {
+  int x;
+  int y;
 };
 
-std::vector<Cell> board(BOARD_LIMIT * BOARD_LIMIT);
-std::mutex children_mtx;
+void generate_maze(const Position &pos, const int &thread_id) {
+  std::vector<Position> directions = {
+      {0, -1}, // left
+      {0, 1},  // right
+      {-1, 0}, // top
+      {1, 0}   // bottom
+  };
 
-void generate_maze(const int x, const int y, const int tid,
-                   std::vector<int> &children) {
-  if (x < 0 || x >= BOARD_LIMIT || y < 0 || y >= BOARD_LIMIT) {
-    return;
-  }
+  std::random_shuffle(directions.begin(), directions.end());
 
-  u_int cell_index = y * BOARD_LIMIT + x;
-  std::lock_guard<std::mutex> lock(board[cell_index].mtx);
-  if (board[cell_index].value == EMPTY) {
-    board[cell_index].value = tid;
+  for (size_t i = 0; i < directions.size(); ++i) {
+    Position new_pos = {pos.x + directions[i].x, pos.y + directions[i].y};
 
-    u_short base = tid + 1;
-    board[cell_index].color[0] = (base * COLOR_R) % 256;
-    board[cell_index].color[1] = (base * COLOR_G) % 256;
-    board[cell_index].color[2] = (base * COLOR_B) % 256;
-  }
+    // Boundary check
+    if (new_pos.x >= 0 && new_pos.x < HEIGHT && new_pos.y >= 0 &&
+        new_pos.y < WIDTH) {
+      std::unique_lock<std::mutex> lock(maze_mutex);
+      if (maze[new_pos.x][new_pos.y] == 0) {
+        maze[new_pos.x][new_pos.y] = thread_id;
+        lock.unlock();
 
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_int_distribution<> dis(0, 3);
-
-  short directions[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-  std::vector<short> availableDirections;
-
-  for (u_short i = 0; i < 4; i++) {
-    int nx = x + directions[i][0];
-    int ny = y + directions[i][1];
-
-    if (nx >= 0 && nx < BOARD_LIMIT && ny >= 0 && ny < BOARD_LIMIT) {
-      if (board[ny * BOARD_LIMIT + nx].value == EMPTY) {
-        availableDirections.push_back(i);
+        // If there are still routes available, start new threads for them
+        if (i < directions.size() - 1) {
+          for (size_t j = i + 1; j < directions.size(); ++j) {
+            Position fork_pos = {pos.x + directions[j].x,
+                                 pos.y + directions[j].y};
+            if (fork_pos.x >= 0 && fork_pos.x < HEIGHT && fork_pos.y >= 0 &&
+                fork_pos.y < WIDTH) {
+              std::unique_lock<std::mutex> fork_lock(maze_mutex);
+              if (maze[fork_pos.x][fork_pos.y] == 0) {
+                thread_count++;
+                int new_thread_id = thread_count;
+                maze[fork_pos.x][fork_pos.y] = new_thread_id;
+                fork_lock.unlock();
+                std::thread(generate_maze, fork_pos, new_thread_id).detach();
+              }
+            }
+          }
+        }
+        // Continue moving in the desired direction
+        generate_maze(new_pos, thread_id);
+        return;
       }
     }
   }
-
-  if (availableDirections.size() > 1) {
-    for (int i = 1; i < availableDirections.size(); i++) {
-      int nx = x + directions[availableDirections[i]][0];
-      int ny = y + directions[availableDirections[i]][1];
-
-      int new_tid = tid + children.size() + 1;
-
-      std::lock_guard<std::mutex> lock(children_mtx);
-      children.push_back(new_tid);
-      std::thread t(generate_maze, nx, ny, new_tid, std::ref(children));
-      t.detach();
-    }
-  }
-
-  if (!availableDirections.empty()) {
-    int nx = x + directions[availableDirections[0]][0];
-    int ny = y + directions[availableDirections[0]][1];
-
-    generate_maze(nx, ny, tid, std::ref(children));
-  }
+  // If the thread cannot move on, it terminates
 }
 
-void generate_ppm() {
-  std::ofstream fp(FILENAME, std::ios::binary);
-  if (!fp) {
-    std::cerr << "[ERR] Error opening file for writing.\n";
-    return;
-  }
-  fp << "P6\n # \n " << BOARD_LIMIT << "\n " << BOARD_LIMIT << "\n 255\n";
-  for (int y = 0; y < BOARD_LIMIT; y++) {
-    for (int x = 0; x < BOARD_LIMIT; x++) {
-      fp.write(reinterpret_cast<char *>(&board[y * BOARD_LIMIT + x].color), 3);
+void save_maze_to_ppm(const std::string &filename) {
+  std::ofstream ofs(filename);
+  ofs << "P3\n" << WIDTH << " " << HEIGHT << "\n255\n";
+  for (int i = 0; i < HEIGHT; ++i) {
+    for (int j = 0; j < WIDTH; ++j) {
+      int value = maze[i][j];
+      int r = (value * 71) % 256;  // R
+      int g = (value * 131) % 256; // G
+      int b = (value * 197) % 256; // B
+      ofs << r << " " << g << " " << b << " ";
     }
+    ofs << "\n";
   }
-  fp.close();
+  ofs.close();
 }
 
-int main(int argc, char **argv) {
-  // tid liczyc od 1
-  // liczyc potomkow, liczbe korytarzy, suma potomkow
-  // jezeli sasiednie sa co najmniej 2 zera, tworzy nowy watek
-  // mozna losowo
+int main() {
+  std::srand(std::time(nullptr));
+  Position start_pos = {HEIGHT / 2, WIDTH / 2};
+  maze[start_pos.x][start_pos.y] = thread_count;
+  std::thread main_thread(generate_maze, start_pos, thread_count);
+  main_thread.join();
 
-  // 0 0 0    0 2 0
-  // 0 1 0 -> 3 1 1
-  // 0 0 0    0 4 0
-
-  std::vector<int> children;
-  generate_maze(BOARD_LIMIT / 2, BOARD_LIMIT / 2, 1, std::ref(children));
-  generate_ppm();
-
+  save_maze_to_ppm("maze.ppm");
+  std::cout << "Maze have been saved to maze.ppm\n";
   return 0;
 }

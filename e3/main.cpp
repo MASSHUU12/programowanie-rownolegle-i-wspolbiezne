@@ -1,9 +1,11 @@
 #include <algorithm>
+#include <atomic>
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
 #include <iostream>
 #include <mutex>
+#include <random>
 #include <thread>
 #include <vector>
 
@@ -11,8 +13,8 @@ const int WIDTH = 128;
 const int HEIGHT = 128;
 
 std::vector<std::vector<int>> maze(HEIGHT, std::vector<int>(WIDTH, 0));
-std::mutex maze_mutex, count_mutex;
-int thread_count = 1, descendant_count = 0, corridor_count = 0;
+std::mutex maze_mutex;
+std::atomic<int> thread_count(1), descendant_count(0), corridor_count(0);
 
 struct Position {
   int x;
@@ -27,7 +29,8 @@ void generate_maze(const Position &pos, const int &thread_id) {
       {1, 0}   // bottom
   };
 
-  std::random_shuffle(directions.begin(), directions.end());
+  static thread_local std::mt19937 g(std::random_device{}());
+  std::shuffle(directions.begin(), directions.end(), g);
 
   for (size_t i = 0; i < directions.size(); ++i) {
     Position new_pos = {pos.x + directions[i].x, pos.y + directions[i].y};
@@ -41,10 +44,7 @@ void generate_maze(const Position &pos, const int &thread_id) {
         if (maze[new_pos.x][new_pos.y] == 0) {
           maze[new_pos.x][new_pos.y] = thread_id;
           can_move = true;
-          {
-            std::unique_lock<std::mutex> count_lock(count_mutex);
             corridor_count++;
-          }
         }
       }
 
@@ -60,20 +60,15 @@ void generate_maze(const Position &pos, const int &thread_id) {
               {
                 std::unique_lock<std::mutex> lock(maze_mutex);
                 if (maze[fork_pos.x][fork_pos.y] == 0) {
-                  thread_count++;
-                  int new_thread_id = thread_count;
+                  int new_thread_id = ++thread_count;
                   maze[fork_pos.x][fork_pos.y] = new_thread_id;
                   can_fork = true;
-
-                  {
-                    std::unique_lock<std::mutex> count_lock(count_mutex);
                     descendant_count++;
                     corridor_count++;
-                  }
                 }
               }
               if (can_fork) {
-                std::thread(generate_maze, fork_pos, thread_count).detach();
+                std::thread(generate_maze, fork_pos, thread_count.load()).detach();
               }
             }
           }
@@ -93,9 +88,9 @@ void save_maze_to_ppm(const std::string &filename) {
   for (int i = 0; i < HEIGHT; ++i) {
     for (int j = 0; j < WIDTH; ++j) {
       int value = maze[i][j];
-      int r = (value * 71) % 256;  // R
-      int g = (value * 131) % 256; // G
-      int b = (value * 197) % 256; // B
+      int r = (value * 71) % 256;
+      int g = (value * 131) % 256;
+      int b = (value * 197) % 256;
       ofs << r << " " << g << " " << b << " ";
     }
     ofs << "\n";
@@ -104,10 +99,10 @@ void save_maze_to_ppm(const std::string &filename) {
 }
 
 int main() {
-  std::srand(std::time(nullptr));
   Position start_pos = {HEIGHT / 2, WIDTH / 2};
-  maze[start_pos.x][start_pos.y] = thread_count;
-  std::thread main_thread(generate_maze, start_pos, thread_count);
+  maze[start_pos.x][start_pos.y] = thread_count.load();
+  corridor_count++;
+  std::thread main_thread(generate_maze, start_pos, thread_count.load());
   main_thread.join();
 
   save_maze_to_ppm("maze.ppm");

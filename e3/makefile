@@ -1,4 +1,4 @@
-all : main png
+all : main maze png
 
 main : main.cpp
 	./build.sh

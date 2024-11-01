@@ -1,7 +1,7 @@
 all : main maze png
 
 main : main.cpp
-	./build.sh
+	g++ -O3 -std=c++11 -pthread ./main.cpp -o maze
 
 maze : main
 	./maze

@@ -7,8 +7,8 @@
 #include <thread>
 #include <vector>
 
-const int WIDTH = 64;
-const int HEIGHT = 64;
+const int WIDTH = 128;
+const int HEIGHT = 128;
 
 std::vector<std::vector<int>> maze(HEIGHT, std::vector<int>(WIDTH, 0));
 std::mutex maze_mutex;

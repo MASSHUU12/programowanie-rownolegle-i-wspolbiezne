@@ -27,3 +27,6 @@ shell_variant = posix
 
 [*.yml]
 indent_size = 2
+
+[makefile]
+indent_style = tab

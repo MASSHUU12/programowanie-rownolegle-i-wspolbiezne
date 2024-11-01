@@ -41,7 +41,7 @@ g++ -std=c++11 -pthread ./lab1/main.cpp
 - https://mpalkowski.zut.edu.pl/lab2_odm.pdf
 - https://rosettacode.org/wiki/Mandelbrot_set#PPM_non_interactive
 
-## Lab 4
+## ~Lab 4~
 
 ```sh
 ./build.sh
@@ -52,3 +52,24 @@ g++ -std=c++11 -pthread ./lab1/main.cpp
 - https://mpalkowski.zut.edu.pl/lab3_odm.pdf
 - https://www.geeksforgeeks.org/socket-programming-cc/
 - https://www.tutorialspoint.com/how-to-output-colored-text-to-a-linux-terminal
+
+## Exercise 3
+
+```txt
+Tablica integerow. Sciana -1.
+Watki przechodzac przez korytarz wpisuja tam wartosc swoj tid.
+Poczatkowo sciany maja wartosc 0.
+Watek sprawdza czy moze isc kierunkie lewo prawo gora dol.
+Wartosc >0 tzn ze juz tam ktos byl.
+Moze zajac tylko korytarz z 0. Skrzyzowanie.
+Watek wybiera jedna droge a dla pozostalych tworzy nowe watki.
+Sprawdzanie  i wpisywanie wartosci robimy w sekcji krytycznej
+(tablicy locków, mutexow). Tablice zapisujecie do PPM i wizualizujecie.
+(powiekszyc tablice do lepszego odczytu - 1 x 9).
+Labirynt generowany samodzielnie.
+Numery watkow potomkow trzymamy we wektorze lokalnym.
+```
+
+```sh
+./build.sh && ./maze
+```

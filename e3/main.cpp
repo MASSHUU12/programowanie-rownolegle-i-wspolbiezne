@@ -11,8 +11,8 @@ const int WIDTH = 128;
 const int HEIGHT = 128;
 
 std::vector<std::vector<int>> maze(HEIGHT, std::vector<int>(WIDTH, 0));
-std::mutex maze_mutex;
-int thread_count = 1;
+std::mutex maze_mutex, count_mutex;
+int thread_count = 1, descendant_count = 0, corridor_count = 0;
 
 struct Position {
   int x;
@@ -35,11 +35,20 @@ void generate_maze(const Position &pos, const int &thread_id) {
     // Boundary check
     if (new_pos.x >= 0 && new_pos.x < HEIGHT && new_pos.y >= 0 &&
         new_pos.y < WIDTH) {
-      std::unique_lock<std::mutex> lock(maze_mutex);
-      if (maze[new_pos.x][new_pos.y] == 0) {
-        maze[new_pos.x][new_pos.y] = thread_id;
-        lock.unlock();
+      bool can_move = false;
+      {
+        std::unique_lock<std::mutex> lock(maze_mutex);
+        if (maze[new_pos.x][new_pos.y] == 0) {
+          maze[new_pos.x][new_pos.y] = thread_id;
+          can_move = true;
+          {
+            std::unique_lock<std::mutex> count_lock(count_mutex);
+            corridor_count++;
+          }
+        }
+      }
 
+      if (can_move) {
         // If there are still routes available, start new threads for them
         if (i < directions.size() - 1) {
           for (size_t j = i + 1; j < directions.size(); ++j) {
@@ -47,13 +56,24 @@ void generate_maze(const Position &pos, const int &thread_id) {
                                  pos.y + directions[j].y};
             if (fork_pos.x >= 0 && fork_pos.x < HEIGHT && fork_pos.y >= 0 &&
                 fork_pos.y < WIDTH) {
-              std::unique_lock<std::mutex> fork_lock(maze_mutex);
-              if (maze[fork_pos.x][fork_pos.y] == 0) {
-                thread_count++;
-                int new_thread_id = thread_count;
-                maze[fork_pos.x][fork_pos.y] = new_thread_id;
-                fork_lock.unlock();
-                std::thread(generate_maze, fork_pos, new_thread_id).detach();
+              bool can_fork = false;
+              {
+                std::unique_lock<std::mutex> lock(maze_mutex);
+                if (maze[fork_pos.x][fork_pos.y] == 0) {
+                  thread_count++;
+                  int new_thread_id = thread_count;
+                  maze[fork_pos.x][fork_pos.y] = new_thread_id;
+                  can_fork = true;
+
+                  {
+                    std::unique_lock<std::mutex> count_lock(count_mutex);
+                    descendant_count++;
+                    corridor_count++;
+                  }
+                }
+              }
+              if (can_fork) {
+                std::thread(generate_maze, fork_pos, thread_count).detach();
               }
             }
           }
@@ -91,6 +111,13 @@ int main() {
   main_thread.join();
 
   save_maze_to_ppm("maze.ppm");
-  std::cout << "Maze have been saved to maze.ppm\n";
+
+  std::cout << "Maze have been saved to maze.ppm\n"
+            << "\n=== Stats ===\n"
+            << "Number of descendants (threads created): " << descendant_count
+            << '\n'
+            << "Number of corridors (cells visited): " << corridor_count
+            << '\n';
+
   return 0;
 }

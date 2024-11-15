@@ -13,15 +13,16 @@ const int WIDTH = 128;
 const int HEIGHT = 128;
 
 std::vector<std::vector<int>> maze(HEIGHT, std::vector<int>(WIDTH, 0));
-std::mutex maze_mutex;
+std::mutex maze_mutex, max_length_mutex;
 std::atomic<int> thread_count(1), descendant_count(0), corridor_count(0);
+std::atomic<int> max_path_length(0);
 
 struct Position {
   int x;
   int y;
 };
 
-void generate_maze(const Position &pos, const int &thread_id) {
+void generate_maze(const Position &pos, const int &thread_id, int path_length) {
   std::vector<Position> directions = {
       {0, -1}, // left
       {0, 1},  // right
@@ -44,7 +45,7 @@ void generate_maze(const Position &pos, const int &thread_id) {
         if (maze[new_pos.x][new_pos.y] == 0) {
           maze[new_pos.x][new_pos.y] = thread_id;
           can_move = true;
-            corridor_count++;
+          corridor_count++;
         }
       }
 
@@ -63,23 +64,31 @@ void generate_maze(const Position &pos, const int &thread_id) {
                   int new_thread_id = ++thread_count;
                   maze[fork_pos.x][fork_pos.y] = new_thread_id;
                   can_fork = true;
-                    descendant_count++;
-                    corridor_count++;
+                  descendant_count++;
+                  corridor_count++;
                 }
               }
               if (can_fork) {
-                std::thread(generate_maze, fork_pos, thread_count.load()).detach();
+                std::thread(generate_maze, fork_pos, thread_count.load(),
+                            path_length + 1)
+                    .detach();
               }
             }
           }
         }
         // Continue moving in the desired direction
-        generate_maze(new_pos, thread_id);
+        generate_maze(new_pos, thread_id, path_length + 1);
         return;
       }
     }
   }
   // If the thread cannot move on, it terminates
+  {
+    std::unique_lock<std::mutex> lock(max_length_mutex);
+    if (path_length > max_path_length) {
+      max_path_length = path_length;
+    }
+  }
 }
 
 void save_maze_to_ppm(const std::string &filename) {
@@ -102,7 +111,7 @@ int main() {
   Position start_pos = {HEIGHT / 2, WIDTH / 2};
   maze[start_pos.x][start_pos.y] = thread_count.load();
   corridor_count++;
-  std::thread main_thread(generate_maze, start_pos, thread_count.load());
+  std::thread main_thread(generate_maze, start_pos, thread_count.load(), 1);
   main_thread.join();
 
   save_maze_to_ppm("maze.ppm");
@@ -110,9 +119,8 @@ int main() {
   std::cout << "Maze have been saved to maze.ppm\n"
             << "\n=== Stats ===\n"
             << "Number of descendants (threads created): " << descendant_count
-            << '\n'
-            << "Number of corridors (cells visited): " << corridor_count
-            << '\n';
+            << "\nNumber of corridors (cells visited): " << corridor_count
+            << "\nLongest corridor length: " << max_path_length << '\n';
 
   return 0;
 }

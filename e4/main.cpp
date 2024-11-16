@@ -1,7 +1,6 @@
 #include <chrono>
 #include <iostream>
-#include <thread>
-#include <vector>
+#include <omp.h>
 
 void call_from_thread(int tid, int n) {
   std::cout << "Launched by thread " << tid << '\n';
@@ -37,8 +36,6 @@ int main(int argc, char **argv) {
 
   std::chrono::steady_clock::time_point begin =
       std::chrono::steady_clock::now();
-  std::vector<std::thread> th;
-  std::string arg = argv[1];
 
   int num_threads = convert_string_to_int(argv[1]);
   if (num_threads <= 0) {
@@ -46,14 +43,13 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  for (int i = 0; i < num_threads; ++i) {
-    th.emplace_back(call_from_thread, i, i);
-  }
+  omp_set_num_threads(num_threads);
 
-  std::cout << "Launched from the main\n";
-
-  for (auto &t : th) {
-    t.join();
+  #pragma omp parallel
+  {
+    int tid = omp_get_thread_num();
+    int n = tid;
+    call_from_thread(tid, n);
   }
 
   std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();

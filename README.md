@@ -93,3 +93,9 @@ Wzbogacić implementację o 3 mechanizm - blokowanie (tiling)
 Nie przeliczać jednego elelementu, lecz od razu cały blok  np. 4x4, 8x8, 16x16, 32x32.
 Porównać wyniki czasowe z poprzednimi.
 ```
+
+Mnożenie zwykłe, z transpozycją i blokowe.
+
+```sh
+make
+```

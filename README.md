@@ -73,3 +73,23 @@ Numery watkow potomkow trzymamy we wektorze lokalnym.
 ```sh
 ./build.sh && ./maze
 ```
+
+## Exercise 4
+
+```txt
+OpenMP
+
+Mnożenie macierzy
+Przeimplementować z zad 1 do biblioteki OpenMP z transpozycją włącznie.
+Przełączniki kompilacji -lgomp -fopenmp -O3.
+Wykorzystać
+#pragma omp parallel
+#pragma omp for
+omp_get_wtime()
+
+Dokumentacja: https://hpc-tutorials.llnl.gov/openmp/
+
+Wzbogacić implementację o 3 mechanizm - blokowanie (tiling)
+Nie przeliczać jednego elelementu, lecz od razu cały blok  np. 4x4, 8x8, 16x16, 32x32.
+Porównać wyniki czasowe z poprzednimi.
+```

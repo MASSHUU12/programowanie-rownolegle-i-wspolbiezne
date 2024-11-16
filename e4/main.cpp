@@ -1,4 +1,3 @@
-#include <chrono>
 #include <iostream>
 #include <omp.h>
 
@@ -8,7 +7,7 @@ int matrix_size{};
 double **a, **b, **c, **bt;
 
 void multiply() {
-  #pragma omp parallel for
+#pragma omp parallel for
   for (int i = 0; i < matrix_size; ++i) {
     for (int j = 0; j < matrix_size; ++j) {
       double sum = 0.0;
@@ -21,6 +20,7 @@ void multiply() {
 }
 
 void transpose_b() {
+#pragma omp parallel for
   for (int i = 0; i < matrix_size; ++i) {
     for (int j = 0; j < matrix_size; ++j) {
       bt[i][j] = b[j][i];
@@ -29,7 +29,7 @@ void transpose_b() {
 }
 
 void multiply_transposed() {
-  #pragma omp parallel for
+#pragma omp parallel for
   for (int i = 0; i < matrix_size; ++i) {
     for (int j = 0; j < matrix_size; ++j) {
       double sum = 0.0;
@@ -42,55 +42,48 @@ void multiply_transposed() {
 }
 
 void measure_time_transpose() {
-  auto start = std::chrono::high_resolution_clock::now();
+  auto start = omp_get_wtime();
   transpose_b();
-  auto end = std::chrono::high_resolution_clock::now();
-  auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-                  .count();
 
-  std::cout << "B matrix transpose time: " << time << "ms\n";
+  std::cout << "B matrix transpose time: " << omp_get_wtime() - start << "s\n";
 }
 
 void measure_time_parallel(int transpose) {
   omp_set_num_threads(cpus);
 
   if (transpose == 0) {
-    auto start = std::chrono::high_resolution_clock::now();
+    auto start = omp_get_wtime();
     multiply();
-    auto end = std::chrono::high_resolution_clock::now();
-    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    std::cout << "Parallel multiplication time: " << time << "ms\n";
+    std::cout << "Parallel multiplication time: " << omp_get_wtime() - start
+              << "s\n";
     return;
   }
 
   measure_time_transpose();
 
-  auto start = std::chrono::high_resolution_clock::now();
+  auto start = omp_get_wtime();
   multiply_transposed();
-  auto end = std::chrono::high_resolution_clock::now();
-  auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-  std::cout << "Parallel multiplication time with transposed matrix B: " << time << "ms\n";
+  std::cout << "Parallel multiplication time with transposed matrix B: "
+            << omp_get_wtime() - start << "s\n";
 }
 
 void measure_time_sequential(int transpose) {
   omp_set_num_threads(1);
 
   if (transpose == 0) {
-    auto start = std::chrono::high_resolution_clock::now();
+    auto start = omp_get_wtime();
     multiply();
-    auto end = std::chrono::high_resolution_clock::now();
-    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    std::cout << "Time of sequential multiplication: " << time << "ms\n";
+    std::cout << "Time of sequential multiplication: "
+              << omp_get_wtime() - start << "s\n";
     return;
   }
 
   measure_time_transpose();
 
-  auto start = std::chrono::high_resolution_clock::now();
+  auto start = omp_get_wtime();
   multiply_transposed();
-  auto end = std::chrono::high_resolution_clock::now();
-  auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-  std::cout << "Sequential multiplication time with transposed matrix B: " << time << "ms\n";
+  std::cout << "Sequential multiplication time with transposed matrix B: "
+            << omp_get_wtime() - start << "s\n";
 }
 
 void initialize_matrix() {

@@ -2,60 +2,168 @@
 #include <iostream>
 #include <omp.h>
 
-void call_from_thread(int tid, int n) {
-  std::cout << "Launched by thread " << tid << '\n';
+int cpus{};
+int matrix_size{};
 
-  int *flatArray_S = new int[n * n];
-  int **S = new int *[n];
+double **a, **b, **c, **bt;
 
-  for (int i = 0; i < n; i++) {
-    S[i] = &flatArray_S[i * n];
+void multiply() {
+  #pragma omp parallel for
+  for (int i = 0; i < matrix_size; ++i) {
+    for (int j = 0; j < matrix_size; ++j) {
+      double sum = 0.0;
+      for (int k = 0; k < matrix_size; ++k) {
+        sum += a[i][k] * b[k][j];
+      }
+      c[i][j] = sum;
+    }
   }
-
-  delete[] S;
-  delete[] flatArray_S;
 }
 
-int convert_string_to_int(const std::string& str) {
-  try {
-    return std::stoi(str);
-  } catch (const std::invalid_argument& ex) {
-    std::cerr << "Invalid number: " << str << '\n';
-    exit(1);
-  } catch (const std::out_of_range& ex) {
-    std::cerr << "Number out of range: " << str << '\n';
-    exit(1);
+void transpose_b() {
+  for (int i = 0; i < matrix_size; ++i) {
+    for (int j = 0; j < matrix_size; ++j) {
+      bt[i][j] = b[j][i];
+    }
   }
+}
+
+void multiply_transposed() {
+  #pragma omp parallel for
+  for (int i = 0; i < matrix_size; ++i) {
+    for (int j = 0; j < matrix_size; ++j) {
+      double sum = 0.0;
+      for (int k = 0; k < matrix_size; ++k) {
+        sum += a[i][k] * bt[j][k];
+      }
+      c[i][j] = sum;
+    }
+  }
+}
+
+void measure_time_transpose() {
+  auto start = std::chrono::high_resolution_clock::now();
+  transpose_b();
+  auto end = std::chrono::high_resolution_clock::now();
+  auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+                  .count();
+
+  std::cout << "B matrix transpose time: " << time << "ms\n";
+}
+
+void measure_time_parallel(int transpose) {
+  omp_set_num_threads(cpus);
+
+  if (transpose == 0) {
+    auto start = std::chrono::high_resolution_clock::now();
+    multiply();
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "Parallel multiplication time: " << time << "ms\n";
+    return;
+  }
+
+  measure_time_transpose();
+
+  auto start = std::chrono::high_resolution_clock::now();
+  multiply_transposed();
+  auto end = std::chrono::high_resolution_clock::now();
+  auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+  std::cout << "Parallel multiplication time with transposed matrix B: " << time << "ms\n";
+}
+
+void measure_time_sequential(int transpose) {
+  omp_set_num_threads(1);
+
+  if (transpose == 0) {
+    auto start = std::chrono::high_resolution_clock::now();
+    multiply();
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "Time of sequential multiplication: " << time << "ms\n";
+    return;
+  }
+
+  measure_time_transpose();
+
+  auto start = std::chrono::high_resolution_clock::now();
+  multiply_transposed();
+  auto end = std::chrono::high_resolution_clock::now();
+  auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+  std::cout << "Sequential multiplication time with transposed matrix B: " << time << "ms\n";
+}
+
+void initialize_matrix() {
+  a = new double *[matrix_size];
+  b = new double *[matrix_size];
+  c = new double *[matrix_size];
+  bt = new double *[matrix_size];
+
+  for (int i = 0; i < matrix_size; ++i) {
+    a[i] = new double[matrix_size];
+    b[i] = new double[matrix_size];
+    c[i] = new double[matrix_size];
+    bt[i] = new double[matrix_size];
+
+    for (int j = 0; j < matrix_size; ++j) {
+      a[i][j] = 1;
+      b[i][j] = 1;
+      c[i][j] = 0.f;
+      bt[i][j] = 0.f;
+    }
+  }
+}
+
+void deallocate_matrix() {
+  for (int i = 0; i < matrix_size; ++i) {
+    delete[] a[i];
+    delete[] b[i];
+    delete[] c[i];
+    delete[] bt[i];
+  }
+
+  delete[] a;
+  delete[] b;
+  delete[] c;
+  delete[] bt;
 }
 
 int main(int argc, char **argv) {
-  if (argc < 2) {
-    std::cerr << "Program requires number of threads to be passed\n";
+  if (argc < 3) {
+    std::cerr << "Usage: <cpus> <size> <transpose>\n";
     return 1;
   }
 
-  std::chrono::steady_clock::time_point begin =
-      std::chrono::steady_clock::now();
+  try {
+    cpus = std::stoi(argv[1]);
+    matrix_size = std::stoi(argv[2]);
 
-  int num_threads = convert_string_to_int(argv[1]);
-  if (num_threads <= 0) {
-    std::cerr << "Number of threads must be greater than 0\n";
+    if (cpus < 1 || matrix_size < 1) {
+      std::cerr << "ERR: Number of CPUs/matrix size less than 1.\n";
+      return 1;
+    }
+
+    int transpose = std::stoi(argv[3]);
+    if (transpose != 0 && transpose != 1) {
+      std::cerr << "ERR: Expected value to be 0 or 1.\n";
+      return 1;
+    }
+
+    initialize_matrix();
+
+    if (cpus == 1) {
+      measure_time_sequential(transpose);
+    } else {
+      measure_time_parallel(transpose);
+    }
+  } catch (const std::invalid_argument &e) {
+    std::cerr << "ERR: Invalid argument.\n";
+    return 1;
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERR: Out of range.\n";
     return 1;
   }
 
-  omp_set_num_threads(num_threads);
-
-  #pragma omp parallel
-  {
-    int tid = omp_get_thread_num();
-    int n = tid;
-    call_from_thread(tid, n);
-  }
-
-  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-  auto duration =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-
-  std::cout << "Time: " << duration << " ns\n";
+  deallocate_matrix();
   return 0;
 }

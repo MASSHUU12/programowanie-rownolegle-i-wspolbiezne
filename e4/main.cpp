@@ -2,17 +2,16 @@
 #include <omp.h>
 
 int cpus{}, matrix_size{}, block_size = 32;
-double **a, **b, **c, **bt;
+double *a, *b, *c, *bt;
 
 void multiply() {
 #pragma omp parallel for
   for (int i = 0; i < matrix_size; ++i) {
-    for (int j = 0; j < matrix_size; ++j) {
-      double sum = 0.0;
-      for (int k = 0; k < matrix_size; ++k) {
-        sum += a[i][k] * b[k][j];
+    for (int k = 0; k < matrix_size; ++k) {
+      double a_ik = a[i * matrix_size + k];
+      for (int j = 0; j < matrix_size; ++j) {
+        c[i * matrix_size + j] += a_ik * b[k * matrix_size + j];
       }
-      c[i][j] = sum;
     }
   }
 }
@@ -21,7 +20,7 @@ void transpose_b() {
 #pragma omp parallel for
   for (int i = 0; i < matrix_size; ++i) {
     for (int j = 0; j < matrix_size; ++j) {
-      bt[i][j] = b[j][i];
+      bt[i * matrix_size + j] = b[j * matrix_size + i];
     }
   }
 }
@@ -32,25 +31,27 @@ void multiply_transposed() {
     for (int j = 0; j < matrix_size; ++j) {
       double sum = 0.0;
       for (int k = 0; k < matrix_size; ++k) {
-        sum += a[i][k] * bt[j][k];
+        sum += a[i * matrix_size + k] * bt[j * matrix_size + k];
       }
-      c[i][j] = sum;
+      c[i * matrix_size + j] = sum;
     }
   }
 }
 
 void multiply_tiled() {
-#pragma omp parallel for collapse(2)
+  #pragma omp parallel for collapse(2)
   for (int ii = 0; ii < matrix_size; ii += block_size) {
     for (int jj = 0; jj < matrix_size; jj += block_size) {
       for (int kk = 0; kk < matrix_size; kk += block_size) {
-        for (int i = ii; i < std::min(ii + block_size, matrix_size); ++i) {
-          for (int j = jj; j < std::min(jj + block_size, matrix_size); ++j) {
-            double sum = 0.0;
-            for (int k = kk; k < std::min(kk + block_size, matrix_size); ++k) {
-              sum += a[i][k] * b[k][j];
+        int i_max = std::min(ii + block_size, matrix_size);
+        int j_max = std::min(jj + block_size, matrix_size);
+        int k_max = std::min(kk + block_size, matrix_size);
+        for (int i = ii; i < i_max; ++i) {
+          for (int k = kk; k < k_max; ++k) {
+            double a_ik = a[i * matrix_size + k];
+            for (int j = jj; j < j_max; ++j) {
+              c[i * matrix_size + j] += a_ik * b[k * matrix_size + j];
             }
-            c[i][j] += sum;
           }
         }
       }
@@ -106,34 +107,24 @@ void measure_time_sequential(int method) {
 }
 
 void initialize_matrix() {
-  a = new double *[matrix_size];
-  b = new double *[matrix_size];
-  c = new double *[matrix_size];
-  bt = new double *[matrix_size];
+  a = new double[matrix_size * matrix_size];
+  b = new double[matrix_size * matrix_size];
+  c = new double[matrix_size * matrix_size];
+  bt = new double[matrix_size * matrix_size];
 
   for (int i = 0; i < matrix_size; ++i) {
-    a[i] = new double[matrix_size];
-    b[i] = new double[matrix_size];
-    c[i] = new double[matrix_size];
-    bt[i] = new double[matrix_size];
-
     for (int j = 0; j < matrix_size; ++j) {
-      a[i][j] = 1;
-      b[i][j] = 1;
-      c[i][j] = 0.f;
-      bt[i][j] = 0.f;
+      int index = i * matrix_size + j;
+
+      a[index] = 1;
+      b[index] = 1;
+      c[index] = 0.f;
+      bt[index] = 0.f;
     }
   }
 }
 
 void deallocate_matrix() {
-  for (int i = 0; i < matrix_size; ++i) {
-    delete[] a[i];
-    delete[] b[i];
-    delete[] c[i];
-    delete[] bt[i];
-  }
-
   delete[] a;
   delete[] b;
   delete[] c;

@@ -2,7 +2,8 @@
 
 filepath="./a.out"
 iterations=$(nproc) # By default use number of CPUs.
-matrix_size=1024
+matrix_size=2048
+block_size=32
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -16,6 +17,10 @@ while [ $# -gt 0 ]; do
       ;;
     --matrix-size)
       matrix_size="$2"
+      shift 2
+      ;;
+    --block-size)
+      block_size="$2"
       shift 2
       ;;
     *)
@@ -34,6 +39,7 @@ cat /proc/cpuinfo | grep -E "model name|siblings|cache size" | sort | uniq
 
 echo
 echo "Matrix size: $matrix_size"
+echo "Tile size: $block_size"
 echo
 
 for i in $(seq 1 $iterations); do
@@ -41,6 +47,7 @@ for i in $(seq 1 $iterations); do
 
   $filepath $i $matrix_size 0
   $filepath $i $matrix_size 1
+  $filepath $i $matrix_size 2
 
   echo
 done

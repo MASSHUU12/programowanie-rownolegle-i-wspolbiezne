@@ -1,0 +1,14 @@
+- Zwiększenie liczby wątków generalnie skraca czas mnożenia do 14 wątków,
+po czym wzrost wydajności maleje lub ulega odwróceniu.
+
+- Wykorzystanie do 14 wątków z kafelkowaniem daje najniższy czas mnożenia.
+
+- Transpozycja macierzy B zwiększa całkowity czas obliczeń. Sugeruje to,
+że narzut transpozycji przewyższa jej korzyści.
+
+- Wdrożenie kafelkowania konsekwentnie poprawia wydajność we wszystkich
+liczbach wątków, zwiększając lokalność pamięci podręcznej i zmniejszając
+opóźnienia w dostępie do pamięci.
+
+- Przy 16 wątkach występuje nieoczekiwany wzrost czasu mnożenia,
+co może wskazywać na malejące zyski z hiperwątkowości lub zwiększony narzut synchronizacji.

@@ -2,101 +2,101 @@ cache size	: 512 KB
 model name	: AMD Ryzen 7 7735U with Radeon Graphics
 siblings	: 16
 
-Matrix size: 2048
-Tile size: 32
+Matrix size: 4096
+Block size: 64
 
 Number of threads: 1
-Time of sequential multiplication: 10.7184s
-B matrix transpose time: 0.00812155s
-Sequential multiplication time with transposed matrix B: 7.05786s
-Sequential multiplication time with tiling: 3.53835s
+Time of sequential multiplication: 26.5418s
+B matrix transpose time: 0.884062s
+Sequential multiplication time with transposed matrix B: 48.2206s
+Sequential multiplication time with tiling: 22.6556s
 
 Number of threads: 2
-Parallel multiplication time: 5.93223s
-B matrix transpose time: 0.00501626s
-Parallel multiplication time with transposed matrix B: 3.52432s
-Parallel multiplication time with tiling: 1.76194s
+Parallel multiplication time: 14.9567s
+B matrix transpose time: 0.476976s
+Parallel multiplication time with transposed matrix B: 25.147s
+Parallel multiplication time with tiling: 11.6895s
 
 Number of threads: 3
-Parallel multiplication time: 4.35694s
-B matrix transpose time: 0.00410005s
-Parallel multiplication time with transposed matrix B: 2.38079s
-Parallel multiplication time with tiling: 1.22139s
+Parallel multiplication time: 10.4233s
+B matrix transpose time: 0.279798s
+Parallel multiplication time with transposed matrix B: 16.8592s
+Parallel multiplication time with tiling: 8.31437s
 
 Number of threads: 4
-Parallel multiplication time: 3.00044s
-B matrix transpose time: 0.00372775s
-Parallel multiplication time with transposed matrix B: 1.80439s
-Parallel multiplication time with tiling: 0.96077s
+Parallel multiplication time: 7.98599s
+B matrix transpose time: 0.246582s
+Parallel multiplication time with transposed matrix B: 12.8943s
+Parallel multiplication time with tiling: 6.49325s
 
 Number of threads: 5
-Parallel multiplication time: 2.49992s
-B matrix transpose time: 0.0035151s
-Parallel multiplication time with transposed matrix B: 1.55739s
-Parallel multiplication time with tiling: 0.842263s
+Parallel multiplication time: 6.84775s
+B matrix transpose time: 0.176334s
+Parallel multiplication time with transposed matrix B: 10.5516s
+Parallel multiplication time with tiling: 5.60597s
 
 Number of threads: 6
-Parallel multiplication time: 2.36376s
-B matrix transpose time: 0.00403318s
-Parallel multiplication time with transposed matrix B: 1.26905s
-Parallel multiplication time with tiling: 0.712963s
+Parallel multiplication time: 6.07688s
+B matrix transpose time: 0.164397s
+Parallel multiplication time with transposed matrix B: 9.13207s
+Parallel multiplication time with tiling: 5.25164s
 
 Number of threads: 7
-Parallel multiplication time: 1.87644s
-B matrix transpose time: 0.00354475s
-Parallel multiplication time with transposed matrix B: 1.10429s
-Parallel multiplication time with tiling: 0.61673s
+Parallel multiplication time: 5.62351s
+B matrix transpose time: 0.117793s
+Parallel multiplication time with transposed matrix B: 8.25593s
+Parallel multiplication time with tiling: 4.78427s
 
 Number of threads: 8
-Parallel multiplication time: 1.68716s
-B matrix transpose time: 0.003661s
-Parallel multiplication time with transposed matrix B: 0.989535s
-Parallel multiplication time with tiling: 0.542306s
+Parallel multiplication time: 5.41474s
+B matrix transpose time: 0.131268s
+Parallel multiplication time with transposed matrix B: 7.50189s
+Parallel multiplication time with tiling: 4.58915s
 
 Number of threads: 9
-Parallel multiplication time: 2.45435s
-B matrix transpose time: 0.00419329s
-Parallel multiplication time with transposed matrix B: 0.864493s
-Parallel multiplication time with tiling: 0.674147s
+Parallel multiplication time: 5.81822s
+B matrix transpose time: 0.0920503s
+Parallel multiplication time with transposed matrix B: 6.93586s
+Parallel multiplication time with tiling: 5.44535s
 
 Number of threads: 10
-Parallel multiplication time: 2.2051s
-B matrix transpose time: 0.00425262s
-Parallel multiplication time with transposed matrix B: 0.837166s
-Parallel multiplication time with tiling: 0.668975s
+Parallel multiplication time: 5.18161s
+B matrix transpose time: 0.0861945s
+Parallel multiplication time with transposed matrix B: 6.60988s
+Parallel multiplication time with tiling: 5.22585s
 
 Number of threads: 11
-Parallel multiplication time: 2.1551s
-B matrix transpose time: 0.00448404s
-Parallel multiplication time with transposed matrix B: 0.740923s
-Parallel multiplication time with tiling: 0.629903s
+Parallel multiplication time: 5.4157s
+B matrix transpose time: 0.0759432s
+Parallel multiplication time with transposed matrix B: 6.27405s
+Parallel multiplication time with tiling: 4.7245s
 
 Number of threads: 12
-Parallel multiplication time: 1.97803s
-B matrix transpose time: 0.00382433s
-Parallel multiplication time with transposed matrix B: 0.726779s
-Parallel multiplication time with tiling: 0.615691s
+Parallel multiplication time: 3.84912s
+B matrix transpose time: 0.0714622s
+Parallel multiplication time with transposed matrix B: 5.62829s
+Parallel multiplication time with tiling: 4.76007s
 
 Number of threads: 13
-Parallel multiplication time: 2.32222s
-B matrix transpose time: 0.00380743s
-Parallel multiplication time with transposed matrix B: 0.650709s
-Parallel multiplication time with tiling: 0.613257s
+Parallel multiplication time: 3.68635s
+B matrix transpose time: 0.0662182s
+Parallel multiplication time with transposed matrix B: 5.49068s
+Parallel multiplication time with tiling: 4.7094s
 
 Number of threads: 14
-Parallel multiplication time: 2.75862s
-B matrix transpose time: 0.0038073s
-Parallel multiplication time with transposed matrix B: 0.640101s
-Parallel multiplication time with tiling: 0.615992s
+Parallel multiplication time: 3.52209s
+B matrix transpose time: 0.0526403s
+Parallel multiplication time with transposed matrix B: 5.30495s
+Parallel multiplication time with tiling: 4.59467s
 
 Number of threads: 15
-Parallel multiplication time: 2.68274s
-B matrix transpose time: 0.00395955s
-Parallel multiplication time with transposed matrix B: 0.580197s
-Parallel multiplication time with tiling: 0.566873s
+Parallel multiplication time: 3.94445s
+B matrix transpose time: 0.0550087s
+Parallel multiplication time with transposed matrix B: 5.51275s
+Parallel multiplication time with tiling: 4.61829s
 
 Number of threads: 16
-Parallel multiplication time: 2.93232s
-B matrix transpose time: 0.00765083s
-Parallel multiplication time with transposed matrix B: 0.822895s
-Parallel multiplication time with tiling: 0.644172s
+Parallel multiplication time: 5.5583s
+B matrix transpose time: 0.077357s
+Parallel multiplication time with transposed matrix B: 6.43519s
+Parallel multiplication time with tiling: 4.71336s

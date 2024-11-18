@@ -1,9 +1,7 @@
 #include <iostream>
 #include <omp.h>
 
-int cpus{};
-int matrix_size{};
-
+int cpus{}, matrix_size{}, block_size = 32;
 double **a, **b, **c, **bt;
 
 void multiply() {
@@ -41,6 +39,25 @@ void multiply_transposed() {
   }
 }
 
+void multiply_tiled() {
+#pragma omp parallel for collapse(2)
+  for (int ii = 0; ii < matrix_size; ii += block_size) {
+    for (int jj = 0; jj < matrix_size; jj += block_size) {
+      for (int kk = 0; kk < matrix_size; kk += block_size) {
+        for (int i = ii; i < std::min(ii + block_size, matrix_size); ++i) {
+          for (int j = jj; j < std::min(jj + block_size, matrix_size); ++j) {
+            double sum = 0.0;
+            for (int k = kk; k < std::min(kk + block_size, matrix_size); ++k) {
+              sum += a[i][k] * b[k][j];
+            }
+            c[i][j] += sum;
+          }
+        }
+      }
+    }
+  }
+}
+
 void measure_time_transpose() {
   auto start = omp_get_wtime();
   transpose_b();
@@ -48,42 +65,44 @@ void measure_time_transpose() {
   std::cout << "B matrix transpose time: " << omp_get_wtime() - start << "s\n";
 }
 
-void measure_time_parallel(int transpose) {
+void measure_time_parallel(int method) {
+  auto start = omp_get_wtime();
   omp_set_num_threads(cpus);
 
-  if (transpose == 0) {
-    auto start = omp_get_wtime();
+  if (method == 0) {
     multiply();
     std::cout << "Parallel multiplication time: " << omp_get_wtime() - start
               << "s\n";
-    return;
+  } else if (method == 1) {
+    measure_time_transpose();
+    multiply_transposed();
+    std::cout << "Parallel multiplication time with transposed matrix B: "
+              << omp_get_wtime() - start << "s\n";
+  } else if (method == 2) {
+    multiply_tiled();
+    std::cout << "Parallel multiplication time with tiling: "
+              << omp_get_wtime() - start << "s\n";
   }
-
-  measure_time_transpose();
-
-  auto start = omp_get_wtime();
-  multiply_transposed();
-  std::cout << "Parallel multiplication time with transposed matrix B: "
-            << omp_get_wtime() - start << "s\n";
 }
 
-void measure_time_sequential(int transpose) {
+void measure_time_sequential(int method) {
+  auto start = omp_get_wtime();
   omp_set_num_threads(1);
 
-  if (transpose == 0) {
-    auto start = omp_get_wtime();
+  if (method == 0) {
     multiply();
     std::cout << "Time of sequential multiplication: "
               << omp_get_wtime() - start << "s\n";
-    return;
+  } else if (method == 1) {
+    measure_time_transpose();
+    multiply_transposed();
+    std::cout << "Sequential multiplication time with transposed matrix B: "
+              << omp_get_wtime() - start << "s\n";
+  } else if (method == 2) {
+    multiply_tiled();
+    std::cout << "Sequential multiplication time with tiling: "
+              << omp_get_wtime() - start << "s\n";
   }
-
-  measure_time_transpose();
-
-  auto start = omp_get_wtime();
-  multiply_transposed();
-  std::cout << "Sequential multiplication time with transposed matrix B: "
-            << omp_get_wtime() - start << "s\n";
 }
 
 void initialize_matrix() {
@@ -122,8 +141,8 @@ void deallocate_matrix() {
 }
 
 int main(int argc, char **argv) {
-  if (argc < 3) {
-    std::cerr << "Usage: <cpus> <size> <transpose>\n";
+  if (argc < 4) {
+    std::cerr << "Usage: <cpus> <size> <method> [block_size]\n";
     return 1;
   }
 
@@ -136,19 +155,23 @@ int main(int argc, char **argv) {
       return 1;
     }
 
-    int transpose = std::stoi(argv[3]);
-    if (transpose != 0 && transpose != 1) {
-      std::cerr << "ERR: Expected value to be 0 or 1.\n";
+    int method = std::stoi(argv[3]);
+    if (method < 0 || method > 2) {
+      std::cerr << "ERR: Expected method to be 0, 1, or 2.\n";
       return 1;
+    }
+
+    if (method == 2 && argc >= 5) {
+      block_size = std::stoi(argv[4]);
+      if (block_size < 1 || block_size > matrix_size) {
+        std::cerr << "ERR: Invalid block size.\n";
+        return 1;
+      }
     }
 
     initialize_matrix();
 
-    if (cpus == 1) {
-      measure_time_sequential(transpose);
-    } else {
-      measure_time_parallel(transpose);
-    }
+    cpus == 1 ? measure_time_sequential(method) : measure_time_parallel(method);
   } catch (const std::invalid_argument &e) {
     std::cerr << "ERR: Invalid argument.\n";
     return 1;

@@ -18,7 +18,12 @@ struct Position {
   int y;
 };
 
-void generate_maze(const Position &pos, const int &thread_id, int path_length) {
+bool is_valid_position(int x, int y) {
+  return x >= 0 && x < HEIGHT && y >= 0 && y < WIDTH;
+}
+
+void generate_maze(const Position &pos, const int &thread_id, int path_length,
+                   std::mt19937 &g) {
   std::vector<Position> directions = {
       {0, -1}, // left
       {0, 1},  // right
@@ -26,16 +31,13 @@ void generate_maze(const Position &pos, const int &thread_id, int path_length) {
       {1, 0}   // bottom
   };
 
-  std::random_device rd;
-  std::mt19937 g(rd());
   std::shuffle(directions.begin(), directions.end(), g);
 
   for (size_t i = 0; i < directions.size(); ++i) {
     Position new_pos = {pos.x + directions[i].x, pos.y + directions[i].y};
 
     // Boundary check
-    if (new_pos.x >= 0 && new_pos.x < HEIGHT && new_pos.y >= 0 &&
-        new_pos.y < WIDTH) {
+    if (is_valid_position(new_pos.x, new_pos.y)) {
       bool can_move = false;
 #pragma omp critical
       {
@@ -52,8 +54,7 @@ void generate_maze(const Position &pos, const int &thread_id, int path_length) {
           for (size_t j = i + 1; j < directions.size(); ++j) {
             Position fork_pos = {pos.x + directions[j].x,
                                  pos.y + directions[j].y};
-            if (fork_pos.x >= 0 && fork_pos.x < HEIGHT && fork_pos.y >= 0 &&
-                fork_pos.y < WIDTH) {
+            if (is_valid_position(fork_pos.x, fork_pos.y)) {
               bool can_fork = false;
               int new_thread_id = 0;
 #pragma omp critical
@@ -68,13 +69,13 @@ void generate_maze(const Position &pos, const int &thread_id, int path_length) {
               }
               if (can_fork) {
 #pragma omp task
-                generate_maze(fork_pos, new_thread_id, path_length + 1);
+                generate_maze(fork_pos, new_thread_id, path_length + 1, g);
               }
             }
           }
         }
         // Continue moving in the desired direction
-        generate_maze(new_pos, thread_id, path_length + 1);
+        generate_maze(new_pos, thread_id, path_length + 1, g);
         return;
       }
     }
@@ -90,6 +91,12 @@ void generate_maze(const Position &pos, const int &thread_id, int path_length) {
 
 void save_maze_to_ppm(const std::string &filename) {
   std::ofstream ofs(filename);
+
+  if (!ofs) {
+    std::cerr << "Failed to open file " << filename << '\n';
+    return;
+  }
+
   ofs << "P3\n" << WIDTH << " " << HEIGHT << "\n255\n";
   for (int i = 0; i < HEIGHT; ++i) {
     for (int j = 0; j < WIDTH; ++j) {
@@ -109,9 +116,12 @@ int main() {
   maze[start_pos.x][start_pos.y] = thread_count;
   corridor_count++;
 
+  std::random_device rd;
+  std::mt19937 g(rd());
+
 #pragma omp parallel
 #pragma omp single
-  generate_maze(start_pos, thread_count, 1);
+  generate_maze(start_pos, thread_count, 1, g);
 
   save_maze_to_ppm("maze.ppm");
 

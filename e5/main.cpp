@@ -10,8 +10,7 @@
 const int WIDTH = 128, HEIGHT = 128;
 
 std::vector<int> maze(HEIGHT *WIDTH, 0);
-int thread_count = 1, descendant_count = 0, corridor_count = 0,
-    max_path_length = 0;
+int descendant_count = 0, corridor_count = 1, max_path_length = 1;
 
 struct Position {
   int x;
@@ -38,57 +37,57 @@ void generate_maze(const Position &pos, const int &thread_id, int path_length,
   for (size_t i = 0; i < directions.size(); ++i) {
     Position new_pos = {pos.x + directions[i].x, pos.y + directions[i].y};
 
-    // Boundary check
-    if (is_valid_position(new_pos.x, new_pos.y)) {
-      bool can_move = false;
+    if (!is_valid_position(new_pos.x, new_pos.y)) {
+      continue;
+    }
+
+    bool can_move = false;
 #pragma omp critical
-      {
-        if (maze[to_maze_index(new_pos.x, new_pos.y)] == 0) {
-          maze[to_maze_index(new_pos.x, new_pos.y)] = thread_id;
-          can_move = true;
-          corridor_count++;
-        }
+    {
+      if (maze[to_maze_index(new_pos.x, new_pos.y)] == 0) {
+        maze[to_maze_index(new_pos.x, new_pos.y)] = thread_id;
+        can_move = true;
+        corridor_count++;
+      }
+    }
+
+    if (!can_move || i >= directions.size() - 1) {
+      continue;
+    }
+
+    // Start new tasks for remaining directions
+    for (size_t j = i + 1; j < directions.size(); ++j) {
+      Position fork_pos = {pos.x + directions[j].x, pos.y + directions[j].y};
+      if (!is_valid_position(fork_pos.x, fork_pos.y)) {
+        continue;
       }
 
-      if (can_move) {
-        // Start new tasks for remaining directions
-        if (i < directions.size() - 1) {
-          for (size_t j = i + 1; j < directions.size(); ++j) {
-            Position fork_pos = {pos.x + directions[j].x,
-                                 pos.y + directions[j].y};
-            if (is_valid_position(fork_pos.x, fork_pos.y)) {
-              bool can_fork = false;
-              int new_thread_id = 0;
+      bool can_fork = false;
+      int new_thread_id = omp_get_thread_num() + 1;
 #pragma omp critical
-              {
-                if (maze[to_maze_index(fork_pos.x, fork_pos.y)] == 0) {
-                  new_thread_id = ++thread_count;
-                  maze[to_maze_index(fork_pos.x, fork_pos.y)] = new_thread_id;
-                  can_fork = true;
-                  descendant_count++;
-                  corridor_count++;
-                }
-              }
-              if (can_fork) {
-#pragma omp task
-                generate_maze(fork_pos, new_thread_id, path_length + 1, g);
-              }
-            }
-          }
+      {
+        if (maze[to_maze_index(fork_pos.x, fork_pos.y)] == 0) {
+          corridor_count++;
+          // Disabling this line gives interesting results
+          new_thread_id = corridor_count;
+          maze[to_maze_index(fork_pos.x, fork_pos.y)] = new_thread_id;
+          descendant_count++;
+          can_fork = true;
         }
-        // Continue moving in the desired direction
-        generate_maze(new_pos, thread_id, path_length + 1, g);
-        return;
+      }
+      if (can_fork) {
+#pragma omp task
+        generate_maze(fork_pos, new_thread_id, path_length + 1, g);
       }
     }
+
+    // Continue moving in the desired direction
+    generate_maze(new_pos, thread_id, path_length + 1, g);
+    return;
   }
-// Update max path length if necessary
+
 #pragma omp critical
-  {
-    if (path_length > max_path_length) {
-      max_path_length = path_length;
-    }
-  }
+  max_path_length = std::max(path_length, max_path_length);
 }
 
 void save_maze_to_ppm(const std::string &filename) {
@@ -116,15 +115,16 @@ void save_maze_to_ppm(const std::string &filename) {
 int main() {
   double start_time = omp_get_wtime();
   Position start_pos = {HEIGHT / 2, WIDTH / 2};
-  maze[to_maze_index(start_pos.x, start_pos.y)] = thread_count;
-  corridor_count++;
-
   std::random_device rd;
   std::mt19937 g(rd());
 
+  maze[to_maze_index(start_pos.x, start_pos.y)] = 1;
+
+  omp_set_num_threads(omp_get_max_threads());
+
 #pragma omp parallel
 #pragma omp single
-  generate_maze(start_pos, thread_count, 1, g);
+  generate_maze(start_pos, 1, 1, g);
 
   save_maze_to_ppm("maze.ppm");
 

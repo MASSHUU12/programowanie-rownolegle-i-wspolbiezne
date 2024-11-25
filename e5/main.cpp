@@ -112,6 +112,7 @@ void save_maze_to_ppm(const std::string &filename) {
 }
 
 int main() {
+  double start_time = omp_get_wtime();
   Position start_pos = {HEIGHT / 2, WIDTH / 2};
   maze[start_pos.x][start_pos.y] = thread_count;
   corridor_count++;
@@ -129,7 +130,9 @@ int main() {
             << "\n-== Stats ==-\n"
             << "Number of descendants (threads created): " << descendant_count
             << "\nNumber of corridors (cells visited): " << corridor_count
-            << "\nLongest corridor length: " << max_path_length << '\n';
+            << "\nLongest corridor length: " << max_path_length
+            << "\nGeneration time: " << (omp_get_wtime() - start_time) * 1000
+            << "ms\n";
 
   return 0;
 }

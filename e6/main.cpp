@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <omp.h>
 #include <string>
 #include <vector>
 
@@ -19,12 +20,14 @@ public:
 
     arrange(startWith);
   }
+
   void display(char c) {
     if (!c)
       displayNumbers();
     else
       displaySymbol(c);
   }
+
   void generatePpm(const std::string &filename) {
     std::ofstream ofs(filename);
     unsigned ct = 0;
@@ -65,13 +68,18 @@ private:
     }
     return true;
   }
-  void arrange(unsigned s) {
-    unsigned stp = 1, n = 1, posX = _mx >> 1, posY = posX, stC = 0;
-    int dx = 1, dy = 0;
 
-    while (posX < _mx && posY < _mx) {
-      _lst.at(posX + posY * _mx) = isPrime(s) ? s : 0;
-      s++;
+  void arrange(unsigned s) {
+    unsigned v = _mx * _mx;
+
+    std::vector<std::pair<unsigned, unsigned>> positions(v);
+
+    unsigned stp = 1, stC = 0;
+    int dx = 1, dy = 0;
+    unsigned posX = _mx >> 1, posY = posX;
+
+    for (unsigned idx = 0; idx < v; ++idx) {
+      positions[idx] = {posX, posY};
 
       if (dx) {
         posX += dx;
@@ -88,11 +96,20 @@ private:
         }
       }
     }
+
+// Równoległe przetwarzanie pozycji z blokowaniem 4x4
+#pragma omp parallel for schedule(static, v / 16)
+    for (unsigned idx = 0; idx < v; ++idx) {
+      unsigned x = positions[idx].first;
+      unsigned y = positions[idx].second;
+      unsigned value = s + idx;
+      _lst[x + y * _mx] = isPrime(value) ? value : 0;
+    }
   }
+
   void displayNumbers() {
     unsigned ct = 0;
-    for (std::vector<unsigned>::iterator i = _lst.begin(); i != _lst.end();
-         i++) {
+    for (auto i = _lst.begin(); i != _lst.end(); i++) {
       if (*i)
         std::cout << std::setw(_wd) << *i << " ";
       else
@@ -104,10 +121,10 @@ private:
     }
     std::cout << "\n\n";
   }
+
   void displaySymbol(char c) {
     unsigned ct = 0;
-    for (std::vector<unsigned>::iterator i = _lst.begin(); i != _lst.end();
-         i++) {
+    for (auto i = _lst.begin(); i != _lst.end(); i++) {
       if (*i)
         std::cout << c;
       else
@@ -126,12 +143,12 @@ private:
 
 int main(int argc, char *argv[]) {
   UlamSpiral ulam;
-  ulam.create(9);
-  ulam.display(0);
-  ulam.create(35);
-  ulam.display('#');
+  // ulam.create(9);
+  // ulam.display(0);
+  // ulam.create(35);
+  // ulam.display('#');
 
-  ulam.create(100);
+  ulam.create(512);
   ulam.generatePpm("ulam_spiral.ppm");
 
   return 0;

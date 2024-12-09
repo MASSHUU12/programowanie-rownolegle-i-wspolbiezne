@@ -9,11 +9,12 @@
 class UlamSpiral {
 public:
   void create(unsigned n, unsigned startWith = 1,
-              const std::string &method = "horizontal") {
+              const std::string &method = "horizontal", int division = 2) {
     _lst.clear();
     if (!(n & 1))
       n++;
     _mx = n;
+    _division = division;
     unsigned v = n * n;
     _wd = static_cast<unsigned>(log10(static_cast<long double>(v))) + 1;
     _lst.resize(v, -1);
@@ -103,7 +104,7 @@ private:
     }
 
 #pragma omp parallel for schedule(static)
-    for (int y = 0; y < static_cast<int>(_mx); ++y) {
+    for (int y = 0; y < _mx; ++y) {
       for (unsigned x = 0; x < _mx; ++x) {
         unsigned idx = y * _mx + x;
         unsigned value = s + idx;
@@ -142,20 +143,17 @@ private:
 
     omp_set_nested(1);
 
-    int num_threads_x = 2;
-    int num_threads_y = 2;
-
-#pragma omp parallel num_threads(num_threads_y)
+#pragma omp parallel num_threads(_division)
     {
       int thread_num_y = omp_get_thread_num();
-      int y_start = thread_num_y * (_mx / num_threads_y);
-      int y_end = (thread_num_y + 1) * (_mx / num_threads_y);
+      int y_start = thread_num_y * (_mx / _division);
+      int y_end = (thread_num_y + 1) * (_mx / _division);
 
-#pragma omp parallel num_threads(num_threads_x)
+#pragma omp parallel num_threads(_division)
       {
         int thread_num_x = omp_get_thread_num();
-        int x_start = thread_num_x * (_mx / num_threads_x);
-        int x_end = (thread_num_x + 1) * (_mx / num_threads_x);
+        int x_start = thread_num_x * (_mx / _division);
+        int x_end = (thread_num_x + 1) * (_mx / _division);
 
         for (unsigned idx = 0; idx < v; ++idx) {
           unsigned x = positions[idx].first;
@@ -202,15 +200,16 @@ private:
 
   std::vector<unsigned> _lst;
   unsigned _mx, _wd;
+  int _division;
 };
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
-    std::cerr << "Usage: <size> <horizontal|quadrants>\n";
+    std::cerr << "Usage: <size> <horizontal|quadrants> [division]\n";
     return 1;
   }
 
-  int size{};
+  int size{}, division{2};
   std::string method{};
 
   try {
@@ -223,9 +222,18 @@ int main(int argc, char *argv[]) {
     }
 
     if (method != "horizontal" && method != "quadrants") {
-      std::cerr
-          << "ERR: Unknown method. Method is not 'horizontal' or 'quadrants'.\n";
+      std::cerr << "ERR: Unknown method. Method is not 'horizontal' or "
+                   "'quadrants'.\n";
       return 1;
+    }
+
+    if (method == "quadrants" && argc > 3) {
+      division = std::stoi(argv[3]);
+
+      if (division <= 0) {
+        std::cerr << "ERR: Invalid division. Division is less than 1.\n";
+        return 1;
+      }
     }
   } catch (const std::invalid_argument &e) {
     std::cerr << "ERR: Invalid argument.\n";
@@ -238,11 +246,11 @@ int main(int argc, char *argv[]) {
   double start_time = omp_get_wtime();
   UlamSpiral ulam;
 
-  ulam.create(size);
+  ulam.create(size, 1, method, division);
   ulam.generatePpm("ulam_spiral.ppm");
 
-  std::cout << "\nGeneration time using " << method << " method took "
-            << (omp_get_wtime() - start_time) * 1000 << "ms\n";
+  std::cout << "\nMethod: " << method << "\nSize: " << size
+            << "\nTime: " << (omp_get_wtime() - start_time) * 1000 << "ms\n";
 
   return 0;
 }

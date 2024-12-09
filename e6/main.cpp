@@ -8,7 +8,8 @@
 
 class UlamSpiral {
 public:
-  void create(unsigned n, unsigned startWith = 1) {
+  void create(unsigned n, unsigned startWith = 1,
+              const std::string &method = "horizontal") {
     _lst.clear();
     if (!(n & 1))
       n++;
@@ -17,7 +18,11 @@ public:
     _wd = static_cast<unsigned>(log10(static_cast<long double>(v))) + 1;
     _lst.resize(v, -1);
 
-    arrange(startWith);
+    if (method == "quadrants") {
+      arrangeQuadrants(startWith);
+    } else {
+      arrangeHorizontal(startWith);
+    }
   }
 
   void display(char c) {
@@ -67,7 +72,47 @@ private:
     return true;
   }
 
-  void arrange(unsigned s) {
+  void arrangeHorizontal(unsigned s) {
+    unsigned v = _mx * _mx;
+
+    std::vector<std::pair<unsigned, unsigned>> positions(v);
+
+    unsigned stp = 1, stC = 0;
+    int dx = 1, dy = 0;
+    unsigned posX = _mx >> 1, posY = posX;
+
+    for (unsigned idx = 0; idx < v; ++idx) {
+      positions[idx] = {posX, posY};
+
+      if (dx) {
+        posX += dx;
+        if (++stC == stp) {
+          dy = -dx;
+          dx = 0;
+          stC = 0;
+        }
+      } else {
+        posY += dy;
+        if (++stC == stp) {
+          dx = dy;
+          dy = 0;
+          stC = 0;
+          stp++;
+        }
+      }
+    }
+
+#pragma omp parallel for schedule(static)
+    for (int y = 0; y < static_cast<int>(_mx); ++y) {
+      for (unsigned x = 0; x < _mx; ++x) {
+        unsigned idx = y * _mx + x;
+        unsigned value = s + idx;
+        _lst[x + y * _mx] = isPrime(value) ? value : 0;
+      }
+    }
+  }
+
+  void arrangeQuadrants(unsigned s) {
     unsigned v = _mx * _mx;
 
     std::vector<std::pair<unsigned, unsigned>> positions(v);
@@ -160,14 +205,44 @@ private:
 };
 
 int main(int argc, char *argv[]) {
+  if (argc < 2) {
+    std::cerr << "Usage: <size> <horizontal|quadrants>\n";
+    return 1;
+  }
+
+  int size{};
+  std::string method{};
+
+  try {
+    size = std::stoi(argv[1]);
+    method = argv[2];
+
+    if (size <= 0) {
+      std::cerr << "ERR: Invalid size. Size is less than 1.\n";
+      return 1;
+    }
+
+    if (method != "horizontal" && method != "quadrants") {
+      std::cerr
+          << "ERR: Unknown method. Method is not 'horizontal' or 'quadrants'.\n";
+      return 1;
+    }
+  } catch (const std::invalid_argument &e) {
+    std::cerr << "ERR: Invalid argument.\n";
+    return 1;
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERR: Out of range.\n";
+    return 1;
+  }
+
   double start_time = omp_get_wtime();
   UlamSpiral ulam;
 
-  ulam.create(512);
+  ulam.create(size);
   ulam.generatePpm("ulam_spiral.ppm");
 
-  std::cout << "\nGeneration time: " << (omp_get_wtime() - start_time) * 1000
-            << "ms\n";
+  std::cout << "\nGeneration time using " << method << " method took "
+            << (omp_get_wtime() - start_time) * 1000 << "ms\n";
 
   return 0;
 }

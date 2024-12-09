@@ -15,8 +15,7 @@ public:
     _mx = n;
     unsigned v = n * n;
     _wd = static_cast<unsigned>(log10(static_cast<long double>(v))) + 1;
-    for (unsigned u = 0; u < v; u++)
-      _lst.push_back(-1);
+    _lst.resize(v, -1);
 
     arrange(startWith);
   }
@@ -38,8 +37,7 @@ public:
     }
 
     ofs << "P3\n" << _mx << " " << _mx << "\n255\n";
-    for (std::vector<unsigned>::iterator i = _lst.begin(); i != _lst.end();
-         i++) {
+    for (auto i = _lst.begin(); i != _lst.end(); i++) {
       if (*i)
         ofs << "0 0 0 "; // Black for primes
       else
@@ -97,13 +95,33 @@ private:
       }
     }
 
-// Równoległe przetwarzanie pozycji z blokowaniem 4x4
-#pragma omp parallel for schedule(static, v / 16)
-    for (unsigned idx = 0; idx < v; ++idx) {
-      unsigned x = positions[idx].first;
-      unsigned y = positions[idx].second;
-      unsigned value = s + idx;
-      _lst[x + y * _mx] = isPrime(value) ? value : 0;
+    omp_set_nested(1);
+
+    int num_threads_x = 2;
+    int num_threads_y = 2;
+
+#pragma omp parallel num_threads(num_threads_y)
+    {
+      int thread_num_y = omp_get_thread_num();
+      int y_start = thread_num_y * (_mx / num_threads_y);
+      int y_end = (thread_num_y + 1) * (_mx / num_threads_y);
+
+#pragma omp parallel num_threads(num_threads_x)
+      {
+        int thread_num_x = omp_get_thread_num();
+        int x_start = thread_num_x * (_mx / num_threads_x);
+        int x_end = (thread_num_x + 1) * (_mx / num_threads_x);
+
+        for (unsigned idx = 0; idx < v; ++idx) {
+          unsigned x = positions[idx].first;
+          unsigned y = positions[idx].second;
+
+          if (x >= x_start && x < x_end && y >= y_start && y < y_end) {
+            unsigned value = s + idx;
+            _lst[x + y * _mx] = isPrime(value) ? value : 0;
+          }
+        }
+      }
     }
   }
 
@@ -142,14 +160,14 @@ private:
 };
 
 int main(int argc, char *argv[]) {
+  double start_time = omp_get_wtime();
   UlamSpiral ulam;
-  // ulam.create(9);
-  // ulam.display(0);
-  // ulam.create(35);
-  // ulam.display('#');
 
   ulam.create(512);
   ulam.generatePpm("ulam_spiral.ppm");
+
+  std::cout << "\nGeneration time: " << (omp_get_wtime() - start_time) * 1000
+            << "ms\n";
 
   return 0;
 }

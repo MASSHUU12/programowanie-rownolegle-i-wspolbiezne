@@ -1,0 +1,17 @@
+cache size	: 512 KB
+model name	: AMD Ryzen 7 7735U with Radeon Graphics
+siblings	: 16
+
+Method: horizontal
+Size: 8192
+Time: 10709.3ms
+
+Method: quadrants
+Size: 8192
+Time: 9067.14ms
+Division: 2
+
+Method: quadrants
+Size: 8192
+Time: 6675.93ms
+Division: 4

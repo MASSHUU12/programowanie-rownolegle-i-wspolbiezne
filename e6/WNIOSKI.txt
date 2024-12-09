@@ -1,0 +1,7 @@
+Zwiększenie podziału w metodzie z podziałem na sekcje (quadrants) z 2x2 do 4x4
+skutkuje znacznym skróceniem czasu wykonania. Oznacza to, że większa liczba podziałów
+pozwala na lepsze wykorzystanie równoległości i potencjału wielowątkowego procesora.
+
+Metoda z podziałem na sekcje (quadrants) z podziałem 4x4 jest szybsza niż metoda
+horyzontalna. Sugeruje to, że podział pracy w obu wymiarach (X i Y) jest bardziej
+efektywny niż podział tylko w jednym wymiarze.

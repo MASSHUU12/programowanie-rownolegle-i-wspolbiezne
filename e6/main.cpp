@@ -1,6 +1,5 @@
 #include <cmath>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <omp.h>
 #include <string>
@@ -24,13 +23,6 @@ public:
     } else {
       arrangeHorizontal(startWith);
     }
-  }
-
-  void display(char c) {
-    if (!c)
-      displayNumbers();
-    else
-      displaySymbol(c);
   }
 
   void generatePpm(const std::string &filename) {
@@ -166,36 +158,6 @@ private:
         }
       }
     }
-  }
-
-  void displayNumbers() {
-    unsigned ct = 0;
-    for (auto i = _lst.begin(); i != _lst.end(); i++) {
-      if (*i)
-        std::cout << std::setw(_wd) << *i << " ";
-      else
-        std::cout << std::string(_wd, '*') << " ";
-      if (++ct >= _mx) {
-        std::cout << "\n";
-        ct = 0;
-      }
-    }
-    std::cout << "\n\n";
-  }
-
-  void displaySymbol(char c) {
-    unsigned ct = 0;
-    for (auto i = _lst.begin(); i != _lst.end(); i++) {
-      if (*i)
-        std::cout << c;
-      else
-        std::cout << " ";
-      if (++ct >= _mx) {
-        std::cout << "\n";
-        ct = 0;
-      }
-    }
-    std::cout << "\n\n";
   }
 
   std::vector<unsigned> _lst;

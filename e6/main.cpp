@@ -213,6 +213,9 @@ int main(int argc, char *argv[]) {
 
   std::cout << "\nMethod: " << method << "\nSize: " << size
             << "\nTime: " << (omp_get_wtime() - start_time) * 1000 << "ms\n";
+  if (method == "quadrants") {
+    std::cout << "Division: " << division << "\n";
+  }
 
   return 0;
 }

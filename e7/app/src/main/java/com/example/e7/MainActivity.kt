@@ -17,12 +17,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
     }
 
-    private external fun calculate(matrixSize: Int): String
+    private external fun calculate(matrixSize: Int, blockSize: Int): String
 
     fun onCalculateClick(view: View) {
         val matrixSize = binding.editMatrixSize.text.toString().toIntOrNull() ?: return
+        val blockSize = binding.editBlockSize.text.toString().toIntOrNull() ?: return
 
-        binding.resultText.text = calculate(matrixSize)
+        binding.resultText.text = calculate(matrixSize, blockSize)
     }
 
     companion object {

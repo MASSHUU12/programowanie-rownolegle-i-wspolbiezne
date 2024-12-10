@@ -99,3 +99,35 @@ Mnożenie zwykłe, z transpozycją i blokowe.
 ```sh
 make
 ```
+
+## Exercies 5
+
+```txt
+Labirynt w OpenMP.
+```
+
+```sh
+make
+```
+
+## Exercise 6
+
+```txt
+https://mpalkowski.zut.edu.pl/lab_ulam.pdf
+```
+
+```sh
+make && make png
+```
+
+## Exercise 7
+
+```txt
+do wyboru
+wyklad 10 lib 11
+https://mpalkowski.zut.edu.pl/
+```
+
+```sh
+TODO
+```

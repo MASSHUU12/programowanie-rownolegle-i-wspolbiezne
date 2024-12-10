@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">E7</string>
     <string name="calculate_button">Calculate</string>
+    <string name="matrix_size">Matrix size</string>
 </resources>

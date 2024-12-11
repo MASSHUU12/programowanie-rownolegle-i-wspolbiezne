@@ -3,4 +3,5 @@
     <string name="calculate_button">Calculate</string>
     <string name="matrix_size">Matrix size</string>
     <string name="block_size">Block size</string>
+    <string name="cpus">CPUs</string>
 </resources>

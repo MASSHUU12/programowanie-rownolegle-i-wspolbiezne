@@ -25,9 +25,9 @@ void multiply_tiled(const int &matrix_size, const int &block_size) {
     }
 }
 
-std::string measure_time_parallel(const int &matrix_size, const int &block_size) {
+std::string measure_time_parallel(const int &matrix_size, const int &block_size, const int &cpus) {
     double start = omp_get_wtime();
-//    omp_set_num_threads(cpus); // TODO
+    omp_set_num_threads(cpus);
 
     multiply_tiled(matrix_size, block_size);
     return "Multiplication time: " + std::to_string(omp_get_wtime() - start) + "s\n";
@@ -57,7 +57,7 @@ void deallocate_matrix() {
 
 extern "C"
 JNIEXPORT jstring JNICALL
-Java_com_example_e7_MainActivity_calculate(JNIEnv *env, jobject thiz, jint matrix_size, jint block_size) {
+Java_com_example_e7_MainActivity_calculate(JNIEnv *env, jobject thiz, jint matrix_size, jint block_size, jint cpus) {
     std::stringstream ss;
 
     initialize_matrix(matrix_size);
@@ -65,7 +65,7 @@ Java_com_example_e7_MainActivity_calculate(JNIEnv *env, jobject thiz, jint matri
     ss << "Matrix size: " << matrix_size << '\n'
         << "Block size: " << block_size << '\n'
         << "CPUs: " << "TODO" << "\n\n"
-        << measure_time_parallel(matrix_size, block_size);
+        << measure_time_parallel(matrix_size, block_size, cpus);
 
     deallocate_matrix();
 

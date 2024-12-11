@@ -23,6 +23,7 @@ class MainActivity : AppCompatActivity() {
         val matrixSize = binding.editMatrixSize.text.toString().toIntOrNull() ?: return
         val blockSize = binding.editBlockSize.text.toString().toIntOrNull() ?: return
 
+        // TODO: Add loading spinner
         binding.resultText.text = calculate(matrixSize, blockSize)
     }
 

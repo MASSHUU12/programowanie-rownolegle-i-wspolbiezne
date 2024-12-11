@@ -35,3 +35,6 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         # List libraries link to the target library
         android
         log)
+
+set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES COMPILE_OPTIONS -fopenmp)
+target_link_libraries(${CMAKE_PROJECT_NAME} -fopenmp -static-openmp)

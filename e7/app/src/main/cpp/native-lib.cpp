@@ -30,7 +30,7 @@ std::string measure_time_parallel(const int &matrix_size, const int &block_size)
 //    omp_set_num_threads(cpus); // TODO
 
     multiply_tiled(matrix_size, block_size);
-    return "Parallel multiplication time with tiling: " + std::to_string(omp_get_wtime() - start) + "s\n";
+    return "Multiplication time: " + std::to_string(omp_get_wtime() - start) + "s\n";
 }
 
 void initialize_matrix(const int &matrix_size) {

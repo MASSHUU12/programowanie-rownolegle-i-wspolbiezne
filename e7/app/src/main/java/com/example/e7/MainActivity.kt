@@ -1,9 +1,8 @@
 package com.example.e7
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
-import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import com.example.e7.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -23,8 +22,14 @@ class MainActivity : AppCompatActivity() {
         val matrixSize = binding.editMatrixSize.text.toString().toIntOrNull() ?: return
         val blockSize = binding.editBlockSize.text.toString().toIntOrNull() ?: return
 
-        // TODO: Add loading spinner
-        binding.resultText.text = calculate(matrixSize, blockSize)
+        binding.resultText.text = ""
+        binding.workIndicator.visibility = View.VISIBLE
+
+        view.post {
+            // TODO: Move to a separate thread to keep the main thread responsive
+            binding.resultText.text = calculate(matrixSize, blockSize)
+            binding.workIndicator.visibility = View.INVISIBLE
+        }
     }
 
     companion object {

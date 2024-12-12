@@ -3,7 +3,11 @@ package com.example.e7
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.example.e7.databinding.ActivityMainBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -24,52 +28,48 @@ class MainActivity : AppCompatActivity() {
         val cpus = getCpus() ?: return
         val matrixSize = getMatrixSize() ?: return
 
-        runOnUiThread {
-            setupBeforeCalculating()
-        }
+        setupBeforeCalculating()
 
-        Thread {
-            val cppResult = calculate(matrixSize, cpus)
-            // TODO: Calculate Kotlin
-            val ktResult = 0.0
-
-            runOnUiThread {
-                cleanupAfterCalculating(cppResult, ktResult)
+        lifecycleScope.launch {
+            val cppResult = withContext(Dispatchers.Default) {
+                calculate(matrixSize, cpus)
             }
-        }.start()
+            val ktResult = withContext(Dispatchers.Default) {
+                MatrixMultiplier(matrixSize, cpus).calculate()
+            }
+
+            cleanupAfterCalculating(cppResult, ktResult)
+        }
     }
 
     fun onCalculateCpp(view: View) {
         val cpus = getCpus() ?: return
         val matrixSize = getMatrixSize() ?: return
 
-        runOnUiThread {
-            setupBeforeCalculating()
-        }
+        setupBeforeCalculating()
 
-        Thread {
-            val result = calculate(matrixSize, cpus)
-            runOnUiThread {
-                cleanupAfterCalculating(result, -1.0)
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.Default) {
+                calculate(matrixSize, cpus)
             }
-        }.start()
+
+            cleanupAfterCalculating(result, -1.0)
+        }
     }
 
     fun onCalculateKt(view: View) {
         val cpus = getCpus() ?: return
         val matrixSize = getMatrixSize() ?: return
 
-        runOnUiThread {
-            setupBeforeCalculating()
-        }
+        setupBeforeCalculating()
 
-        Thread {
-            // TODO
-            val result = 0.0
-            runOnUiThread {
-                cleanupAfterCalculating(-1.0, result)
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.Default) {
+                MatrixMultiplier(matrixSize, cpus).calculate()
             }
-        }.start()
+
+            cleanupAfterCalculating(-1.0, result)
+        }
     }
 
     private fun setDefaultValues() {

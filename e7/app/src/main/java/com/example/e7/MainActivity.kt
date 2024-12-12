@@ -3,7 +3,11 @@ package com.example.e7
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.example.e7.databinding.ActivityMainBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -19,17 +23,21 @@ class MainActivity : AppCompatActivity() {
     private external fun calculate(matrixSize: Int, cpus: Int): String
 
     fun onCalculateClick(view: View) {
-        val matrixSize = binding.editMatrixSize.text.toString().toIntOrNull() ?: return
         val cpus = binding.editCpus.text.toString().toIntOrNull() ?: return
+        val matrixSize = binding.editMatrixSize.text.toString().toIntOrNull() ?: return
 
         binding.resultText.text = ""
+        binding.calculateButton.isClickable = false
         binding.workIndicator.visibility = View.VISIBLE
 
-        view.post {
-            // TODO: Move to a separate thread to keep the main thread responsive
-            binding.resultText.text = calculate(matrixSize, cpus)
-            binding.workIndicator.visibility = View.INVISIBLE
-        }
+        Thread {
+            val result = calculate(matrixSize, cpus)
+            runOnUiThread {
+                binding.resultText.text = result
+                binding.calculateButton.isClickable = true
+                binding.workIndicator.visibility = View.INVISIBLE
+            }
+        }.start()
     }
 
     companion object {

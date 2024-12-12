@@ -49,15 +49,13 @@ void deallocate_matrix() {
 extern "C"
 JNIEXPORT jstring JNICALL
 Java_com_example_e7_MainActivity_calculate(JNIEnv *env, jobject thiz, jint matrix_size, jint cpus) {
-    std::stringstream ss;
+    std::string result;
 
     initialize_matrix(matrix_size);
 
-    ss << "Matrix size: " << matrix_size << '\n'
-        << "CPUs: " << "TODO" << "\n\n"
-        << measure_time_parallel(matrix_size, cpus);
+    result = measure_time_parallel(matrix_size, cpus);
 
     deallocate_matrix();
 
-    return env->NewStringUTF(ss.str().c_str());
+    return env->NewStringUTF(result.c_str());
 }

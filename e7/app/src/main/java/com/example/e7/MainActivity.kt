@@ -3,11 +3,7 @@ package com.example.e7
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import com.example.e7.databinding.ActivityMainBinding
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,22 +18,92 @@ class MainActivity : AppCompatActivity() {
 
     private external fun calculate(matrixSize: Int, cpus: Int): String
 
-    fun onCalculateClick(view: View) {
-        val cpus = binding.editCpus.text.toString().toIntOrNull() ?: return
-        val matrixSize = binding.editMatrixSize.text.toString().toIntOrNull() ?: return
+    fun onCalculateAll(view: View) {
+        val cpus = getCpus() ?: return
+        val matrixSize = getMatrixSize() ?: return
 
-        binding.resultText.text = ""
-        binding.calculateButton.isClickable = false
-        binding.workIndicator.visibility = View.VISIBLE
+        runOnUiThread {
+            setupBeforeCalculating()
+        }
+
+        Thread {
+            val cppResult = calculate(matrixSize, cpus)
+            // TODO: Calculate Kotlin
+            val ktResult = ""
+
+            runOnUiThread {
+                cleanupAfterCalculating(cppResult + ktResult)
+            }
+        }.start()
+    }
+
+    fun onCalculateCpp(view: View) {
+        val cpus = getCpus() ?: return
+        val matrixSize = getMatrixSize() ?: return
+
+        runOnUiThread {
+            setupBeforeCalculating()
+        }
 
         Thread {
             val result = calculate(matrixSize, cpus)
             runOnUiThread {
-                binding.resultText.text = result
-                binding.calculateButton.isClickable = true
-                binding.workIndicator.visibility = View.INVISIBLE
+                cleanupAfterCalculating(result)
             }
         }.start()
+    }
+
+    fun onCalculateKt(view: View) {
+        val cpus = getCpus() ?: return
+        val matrixSize = getMatrixSize() ?: return
+
+        runOnUiThread {
+            setupBeforeCalculating()
+        }
+
+        Thread {
+            // TODO
+            val result = ""
+            runOnUiThread {
+                cleanupAfterCalculating(result)
+            }
+        }.start()
+    }
+
+    private fun getCpus(): Int? {
+        return binding.editCpus.text.toString().toIntOrNull()
+    }
+
+    private fun getMatrixSize(): Int? {
+        return binding.editMatrixSize.text.toString().toIntOrNull()
+    }
+
+    private fun setupBeforeCalculating() {
+        setOutputText("")
+        toggleLoading(true)
+        toggleButtons(false)
+    }
+
+    private fun cleanupAfterCalculating(text: String) {
+        setOutputText(
+            "Matrix size: " + getMatrixSize() + "\nCPUs: " + getCpus() + "\n\n" + text
+        )
+        toggleLoading(false)
+        toggleButtons(true)
+    }
+
+    private fun toggleButtons(clickable: Boolean) {
+        binding.calculateKtButton.isClickable = clickable
+        binding.calculateAllButton.isClickable = clickable
+        binding.calculateCppButton.isClickable = clickable
+    }
+
+    private fun toggleLoading(loading: Boolean) {
+        binding.workIndicator.visibility = if (loading) View.VISIBLE else View.INVISIBLE
+    }
+
+    private fun setOutputText(text: String) {
+        binding.resultText.text = text
     }
 
     companion object {

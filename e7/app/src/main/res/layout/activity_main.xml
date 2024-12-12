@@ -25,29 +25,62 @@
             android:id="@+id/editMatrixSize"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:autofillHints=""
             android:ems="10"
             android:hint="@string/matrix_size"
-            android:inputType="number" />
+            android:inputType="number"
+            android:minHeight="48dp" />
 
         <EditText
             android:id="@+id/editCpus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:autofillHints=""
             android:ems="10"
             android:hint="@string/cpus"
-            android:inputType="number" />
+            android:inputType="number"
+            android:minHeight="48dp" />
 
-        <Button
-            android:id="@+id/calculate_button"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/buttons"
+            style="?android:attr/buttonBarStyle"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:onClick="onCalculateClick"
-            android:text="@string/calculate_button" />
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/calculate_all_button"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:onClick="onCalculateAll"
+                android:text="@string/calculate_all_button" />
+
+            <Button
+                android:id="@+id/calculate_cpp_button"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:onClick="onCalculateCpp"
+                android:text="@string/calculate_cpp_button" />
+
+            <Button
+                android:id="@+id/calculate_kt_button"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:onClick="onCalculateKt"
+                android:text="@string/calculate_kt_button" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/result_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="visible" />
 
         <ProgressBar
             android:id="@+id/workIndicator"

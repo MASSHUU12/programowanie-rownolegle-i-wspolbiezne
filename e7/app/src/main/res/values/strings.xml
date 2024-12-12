@@ -1,7 +1,9 @@
 <resources>
     <string name="app_name">E7</string>
-    <string name="calculate_button">Calculate</string>
+    <string name="calculate_cpp_button">C++</string>
     <string name="matrix_size">Matrix size</string>
     <string name="block_size">Block size</string>
     <string name="cpus">CPUs</string>
+    <string name="calculate_kt_button">Kotlin</string>
+    <string name="calculate_all_button">All</string>
 </resources>

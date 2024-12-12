@@ -14,9 +14,11 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        setDefaultValues()
     }
 
-    private external fun calculate(matrixSize: Int, cpus: Int): String
+    private external fun calculate(matrixSize: Int, cpus: Int): Double
 
     fun onCalculateAll(view: View) {
         val cpus = getCpus() ?: return
@@ -29,10 +31,10 @@ class MainActivity : AppCompatActivity() {
         Thread {
             val cppResult = calculate(matrixSize, cpus)
             // TODO: Calculate Kotlin
-            val ktResult = ""
+            val ktResult = 0.0
 
             runOnUiThread {
-                cleanupAfterCalculating(cppResult + ktResult)
+                cleanupAfterCalculating(cppResult, ktResult)
             }
         }.start()
     }
@@ -48,7 +50,7 @@ class MainActivity : AppCompatActivity() {
         Thread {
             val result = calculate(matrixSize, cpus)
             runOnUiThread {
-                cleanupAfterCalculating(result)
+                cleanupAfterCalculating(result, -1.0)
             }
         }.start()
     }
@@ -63,11 +65,16 @@ class MainActivity : AppCompatActivity() {
 
         Thread {
             // TODO
-            val result = ""
+            val result = 0.0
             runOnUiThread {
-                cleanupAfterCalculating(result)
+                cleanupAfterCalculating(-1.0, result)
             }
         }.start()
+    }
+
+    private fun setDefaultValues() {
+        binding.editMatrixSize.setText("1024")
+        binding.editCpus.setText("12") // TODO: Set to number of CPUs
     }
 
     private fun getCpus(): Int? {
@@ -84,9 +91,13 @@ class MainActivity : AppCompatActivity() {
         toggleButtons(false)
     }
 
-    private fun cleanupAfterCalculating(text: String) {
+    private fun cleanupAfterCalculating(timeCpp: Double, timeKt: Double) {
         setOutputText(
-            "Matrix size: " + getMatrixSize() + "\nCPUs: " + getCpus() + "\n\n" + text
+            "Matrix size: " + getMatrixSize() + "\nCPUs: " + getCpus() + "\n\n"
+                + "Multiplication time:\n"
+                + (if (timeCpp > -1.0) "C++: " + timeCpp + "s\n" else "")
+                + (if (timeKt > -1.0) "Kotlin: " + timeKt + "s\n" else "")
+                + '\n'
         )
         toggleLoading(false)
         toggleButtons(true)

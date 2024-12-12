@@ -16,12 +16,12 @@ void multiply(const int &matrix_size) {
     }
 }
 
-std::string measure_time_parallel(const int &matrix_size, const int &cpus) {
+double measure_time_parallel(const int &matrix_size, const int &cpus) {
     double start = omp_get_wtime();
     omp_set_num_threads(cpus);
 
     multiply(matrix_size);
-    return "Multiplication time: " + std::to_string(omp_get_wtime() - start) + "s\n";
+    return omp_get_wtime() - start;
 }
 
 void initialize_matrix(const int &matrix_size) {
@@ -47,15 +47,15 @@ void deallocate_matrix() {
 }
 
 extern "C"
-JNIEXPORT jstring JNICALL
+JNIEXPORT jdouble JNICALL
 Java_com_example_e7_MainActivity_calculate(JNIEnv *env, jobject thiz, jint matrix_size, jint cpus) {
-    std::string result;
+    double time{};
 
     initialize_matrix(matrix_size);
 
-    result = measure_time_parallel(matrix_size, cpus);
+    time = measure_time_parallel(matrix_size, cpus);
 
     deallocate_matrix();
 
-    return env->NewStringUTF(result.c_str());
+    return time;
 }

@@ -30,16 +30,8 @@
             android:inputType="number" />
 
         <EditText
-            android:id="@+id/editBlockSize"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ems="10"
-            android:hint="@string/block_size"
-            android:inputType="number" />
-
-        <EditText
             android:id="@+id/editCpus"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="@string/cpus"

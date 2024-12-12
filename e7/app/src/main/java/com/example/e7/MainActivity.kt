@@ -16,11 +16,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
     }
 
-    private external fun calculate(matrixSize: Int, blockSize: Int, cpus: Int): String
+    private external fun calculate(matrixSize: Int, cpus: Int): String
 
     fun onCalculateClick(view: View) {
         val matrixSize = binding.editMatrixSize.text.toString().toIntOrNull() ?: return
-        val blockSize = binding.editBlockSize.text.toString().toIntOrNull() ?: return
         val cpus = binding.editCpus.text.toString().toIntOrNull() ?: return
 
         binding.resultText.text = ""
@@ -28,7 +27,7 @@ class MainActivity : AppCompatActivity() {
 
         view.post {
             // TODO: Move to a separate thread to keep the main thread responsive
-            binding.resultText.text = calculate(matrixSize, blockSize, cpus)
+            binding.resultText.text = calculate(matrixSize, cpus)
             binding.workIndicator.visibility = View.INVISIBLE
         }
     }

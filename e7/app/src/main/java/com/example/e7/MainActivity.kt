@@ -74,7 +74,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun setDefaultValues() {
         binding.editMatrixSize.setText("1024")
-        binding.editCpus.setText("12") // TODO: Set to number of CPUs
+        binding.editCpus.setText(getNumberOfPhysicalCores().toString())
+    }
+
+    private fun getNumberOfPhysicalCores(): Int {
+        return Runtime.getRuntime().availableProcessors()
     }
 
     private fun getCpus(): Int? {
